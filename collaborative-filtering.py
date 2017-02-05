@@ -26,9 +26,7 @@ def compute_movie_similarity(um):
 def fold(users, movies, ratings):
     kf = KFold(n_splits=10)
     for train, test in kf.split(users):
-        users_train = users[train]
-        movies_train = movies[train]
-        ratings_train = ratings[train]
+        users_train, movies_train, ratings_train = users[train], movies[train], ratings[train]
 
         users_test, movies_test, ratings_test = users[test], movies[test], ratings[test]
 
@@ -40,3 +38,4 @@ def fold(users, movies, ratings):
         movie_filter(movie_sim, users_test)
 
 def movie_filter(movie_sim, users, n_rec=6):
+    pass
