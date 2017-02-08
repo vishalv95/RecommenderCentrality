@@ -1,0 +1,27 @@
+language: python
+
+python:
+    - "3.5"
+
+sudo: false
+
+install:
+    - pip install --upgrade pip
+    - pip --version
+    - pip install numpy
+    - pip install matplotlib
+    - pip install pandas
+    - pip install scipy
+    - pip install sklearn
+
+before_script:
+    - uname -a
+    - printenv
+    - pip list
+
+script:
+    - date
+    - ls -al
+    - make dependencies
+    - make test
+    - make figures
