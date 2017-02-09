@@ -24,11 +24,11 @@ def read_data(filename):
     return frequency
 
 if __name__ == "__main__":
-    frequency = read_data(sys.argv[1])
+    frequency = list(int(k) for k in read_data(sys.argv[1]).keys())
     plt.xlabel("Number of ratings")
     plt.ylabel("Number of users")
     plt.title("Distribution of number of ratings per user")
-    plt.scatter(list(int(k) for k in frequency.keys()), list(frequency.values()), label="test", s=1)
-    plt.yscale('log')
+    plt.hist(frequency, bins=100, edgecolor='k', linewidth=1, facecolor='w')
+#    plt.yscale('log')
     plt.savefig(sys.argv[2])
 
