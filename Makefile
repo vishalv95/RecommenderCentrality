@@ -15,5 +15,10 @@ dependencies:
 	rm -rf ml-latest-small.zip
 
 figures:
+	rm -rf data figures
+	make dependencies
 	mkdir figures
 	$(PYTHON) ratings-count-distribution.py ./data/ratings.csv ./figures/ratings-count-distribution.png
+
+clean:
+	rm -rf data figures
