@@ -10,8 +10,25 @@ import sys
 user_id_map = dict()
 movie_id_map = dict()
 
-def read_data(filename):
+def read_csv_data(filename):
     ratings_df = pd.read_csv(filename)
+    users = ratings_df["userId"].as_matrix()
+    movies = ratings_df["movieId"].as_matrix()
+    ratings = ratings_df["rating"].as_matrix()
+
+    global user_id_map
+    user_id_map = {user: i for i, user in enumerate(list(set(users)))}
+    user_ind = np.array([user_id_map[user] for user in users])
+
+    global movie_id_map
+    movie_id_map = {movie: i for i, movie in enumerate(list(set(movies)))}
+    movie_ind = np.array([movie_id_map[movie] for movie in movies])
+
+    return (user_ind, movie_ind, ratings)
+
+def read_dat_data(filename):
+    ratings_df = pd.read_csv(filename, sep='::', header=None)
+    ratings_df.columns = ["userId", "movieId", "rating", "timestamp"]
     users = ratings_df["userId"].as_matrix()
     movies = ratings_df["movieId"].as_matrix()
     ratings = ratings_df["rating"].as_matrix()
@@ -70,7 +87,6 @@ def fold(users, movies, ratings):
 
         intersect_user_list = set(users_test) & set(users_train)
         user_actual_list = []
-        user_set = {u for u,m,r in triple_list}
         for user in intersect_user_list:
             mov_rating = [(m, r) for u, m, r in triple_list if u == user]
             if mov_rating:
@@ -109,7 +125,8 @@ def fill_matrix(s_user, um):
 
 
 if __name__ == "__main__":
-    users, movies, ratings = read_data(sys.argv[1])
+    filename = sys.argv[1]
+    users, movies, ratings = read_csv_data(filename) if filename[-3] == 'csv' else read_dat_data(filename)
     fold(users, movies, ratings)
 #    um = convert_to_um_matrix(users, movies, ratings)
 #    s_user = compute_user_similarity(um)
