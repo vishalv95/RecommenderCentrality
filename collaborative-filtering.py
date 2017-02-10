@@ -4,6 +4,7 @@ from scipy.sparse import csr_matrix
 from sklearn.preprocessing import normalize
 from sklearn.cross_validation import KFold
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.neighbors import LSHForest 
 import sys
 
 user_id_map = dict()
@@ -45,6 +46,14 @@ def compute_movie_similarity(um):
     s_movie.setdiag(0)
     return s_movie
 
+
+def hash_user_similarity(um):
+    lsh = LSHForest()
+    lsh.fit(um)
+    dist, ind = lsh.kneighbors(um, n_neighbors=6, return_distance=True)
+    return dist, ind
+
+
 def fold(users, movies, ratings):
     kf = KFold(len(users), n_folds=10, shuffle=True)
     triple_list = list(zip(users, movies, ratings))
@@ -54,10 +63,10 @@ def fold(users, movies, ratings):
         users_test, movies_test, ratings_test = users[test], movies[test], ratings[test]
 
         um = convert_to_um_matrix(users_train, movies_train, ratings_train)
-        s_user = compute_user_similarity(um)
-        s_movie = compute_movie_similarity(um)
+        dist, ind = hash_user_similarity(um)
+        # s_movie = compute_movie_similarity(um)
 
-        um_dense = fill_matrix(s_user, um)
+        um_dense = fill_hash_matrix(um, dist, ind)
 
         intersect_user_list = set(users_test) & set(users_train)
         user_actual_list = []
@@ -75,7 +84,7 @@ def precision_at_N(um_dense, user_actual_list, top_N=6):
     for user, movie_ratings in user_actual_list:
         top_sorted_actual = sorted(movie_ratings, key=lambda x : x[1])[::-1][:top_N]
 #        print(um_dense[user].shape)
-        top_sorted_predicted = np.argsort(um_dense[user]).tolist()[0][::-1][:top_N]
+        top_sorted_predicted = np.argsort(um_dense[user]).tolist()[::-1][:top_N]
 #        print(len(top_sorted_predicted[0]))
 #        print(top_sorted_actual[:5])
 #        print(top_sorted_predicted[:5])
@@ -84,12 +93,20 @@ def precision_at_N(um_dense, user_actual_list, top_N=6):
         precisions.append(overlap / total_rated)
     return np.mean(precisions)
 
+
+def fill_hash_matrix(um, dist, ind, n_neighbors=6):
+    um_dense = np.vstack(tuple([dist[i].reshape(1,n_neighbors) * um[ind[i]] for i in range(len(ind))]))
+    s_sum = dist.sum(axis=1)
+    return (um_dense.T / s_sum).T
+
+
 def fill_matrix(s_user, um):
     um_dense = np.dot(s_user, um)
     s_sum = s_user.sum(axis=0)
     return (um_dense.T / s_sum).T
 #    return um_dense
 #    return np.divide(um_dense, s_sum)
+
 
 if __name__ == "__main__":
     users, movies, ratings = read_data(sys.argv[1])
