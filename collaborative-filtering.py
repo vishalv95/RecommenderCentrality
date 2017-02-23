@@ -74,35 +74,44 @@ def fold(users, movies, ratings):
     kf = KFold(len(users), n_folds=10, shuffle=True)
     triple_list = list(zip(users, movies, ratings))
     for train, test in kf:
+        # Split the ratings into train and test
         users_train, movies_train, ratings_train = users[train], movies[train], ratings[train]
-
         users_test, movies_test, ratings_test = users[test], movies[test], ratings[test]
 
+        # Convert the train ratings into a User-Movie matrix
         um = convert_to_um_matrix(users_train, movies_train, ratings_train)
+
+        # Compute user similarity via LSH and movie similarity via MMM
         dist, ind = hash_user_similarity(um)
         # s_movie = compute_movie_similarity(um)
 
+        # Complete the sparse UM matrix via the collaborative filtering algorithm
         um_dense = fill_hash_matrix(um, dist, ind)
 
-        intersect_user_list = set(users_test) & set(users_train)
-        user_actual_list = []
-        for user in intersect_user_list:
-            mov_rating = [(m, r) for u, m, r in triple_list if u == user]
-            if mov_rating:
-                user_actual_list.append((user, mov_rating))
+        # Compute metrics for the completed matrix with users that are in train and test
+        intersect_users = set(users_test) & set(users_train)
+        test_list = zip(users_test, movies_test, ratings_test)
 
-        print(rmse(um_dense, user_actual_list))
-        # print(precision_at_N(um_dense, user_actual_list))
+        # Exclude the training ratings to avoid lookahead bias
+        user_actual_list = [(user, [(m,r) for u,m,r in test_list if u==user]) for user in intersect_users]
+        user_movie_train_pairs = set(zip(users_train, movies_train))
+
+        # print(rmse(um_dense, user_actual_list))
+        print(precision_at_N(um_dense, user_actual_list, user_movie_train_pairs))
 
 
-def precision_at_N(um_dense, user_actual_list, top_N=6):
+def precision_at_N(um_dense, user_actual_list, user_movie_train_pairs, top_N=6):
     precisions = []
     for user, movie_ratings in user_actual_list:
         top_sorted_actual = sorted(movie_ratings, key=lambda x : x[1])[::-1][:top_N]
+
+        # Sort the predictions by rating and filter out the movies that were in the training set 
         top_sorted_predicted = np.argsort(um_dense[user]).tolist()[::-1][:top_N]
+        top_sorted_predicted = [m for m in top_sorted_predicted if (user, m) not in user_movie_train_pairs]
+        
         overlap = len({m for m,r in top_sorted_actual} & set(top_sorted_predicted))
         total_rated = min(len(top_sorted_actual), len(top_sorted_predicted))
-        precisions.append(overlap / total_rated)
+        if total_rated: precisions.append(overlap / total_rated)
     return np.mean(precisions)
 
 
