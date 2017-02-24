@@ -58,7 +58,6 @@ def compute_user_similarity(um):
 
 def compute_movie_similarity(um):
     s_movie = cosine_similarity(um.T, um.T, dense_output=False)
-#    print(s_movie[:5][:5])
     s_movie.setdiag(0)
     return s_movie
 
@@ -72,7 +71,6 @@ def hash_user_similarity(um):
 
 def fold(users, movies, ratings):
     kf = KFold(len(users), n_folds=10, shuffle=True)
-    triple_list = list(zip(users, movies, ratings))
     for train, test in kf:
         # Split the ratings into train and test
         users_train, movies_train, ratings_train = users[train], movies[train], ratings[train]
@@ -106,8 +104,8 @@ def precision_at_N(um_dense, user_actual_list, user_movie_train_pairs, top_N=6):
         top_sorted_actual = sorted(movie_ratings, key=lambda x : x[1])[::-1][:top_N]
 
         # Sort the predictions by rating and filter out the movies that were in the training set 
-        top_sorted_predicted = np.argsort(um_dense[user]).tolist()[::-1][:top_N]
-        top_sorted_predicted = [m for m in top_sorted_predicted if (user, m) not in user_movie_train_pairs]
+        top_sorted_predicted = np.argsort(um_dense[user]).tolist()[::-1]
+        top_sorted_predicted = [m for m in top_sorted_predicted if (user, m) not in user_movie_train_pairs][:top_N]
         
         overlap = len({m for m,r in top_sorted_actual} & set(top_sorted_predicted))
         total_rated = min(len(top_sorted_actual), len(top_sorted_predicted))
@@ -134,6 +132,11 @@ def fill_matrix(s_user, um):
     um_dense = np.dot(s_user, um)
     s_sum = s_user.sum(axis=0)
     return (um_dense.T / s_sum).T
+
+
+def compute_top_movies(um):
+    averages = um.sum(0)/(um != 0).sum(0)
+    return np.argsort(averages[0]).tolist()[::-1]
 
 
 if __name__ == "__main__":
