@@ -1,3 +1,4 @@
+from __future__ import division
 import pandas as pd
 import numpy as np
 from scipy.sparse import csr_matrix
@@ -66,7 +67,8 @@ def hash_user_similarity(um):
     lsh = LSHForest()
     lsh.fit(um)
     dist, ind = lsh.kneighbors(um, n_neighbors=6, return_distance=True)
-    return dist, ind
+    sim = 1 - dist
+    return sim, ind
 
 
 def fold(users, movies, ratings):
@@ -80,11 +82,11 @@ def fold(users, movies, ratings):
         um = convert_to_um_matrix(users_train, movies_train, ratings_train)
 
         # Compute user similarity via LSH and movie similarity via MMM
-        dist, ind = hash_user_similarity(um)
+        sim, ind = hash_user_similarity(um)
         # s_movie = compute_movie_similarity(um)
 
         # Complete the sparse UM matrix via the collaborative filtering algorithm
-        um_dense = fill_hash_matrix(um, dist, ind)
+        um_dense = fill_hash_matrix(um, sim, ind)
 
         # Compute metrics for the completed matrix with users that are in train and test
         intersect_users = set(users_test) & set(users_train)
@@ -122,9 +124,9 @@ def rmse(um_dense, user_actual_list):
     return np.sqrt(np.mean(errors))
 
 
-def fill_hash_matrix(um, dist, ind, n_neighbors=6):
-    um_dense = np.vstack(tuple([dist[i].reshape(1,n_neighbors) * um[ind[i]] for i in range(len(ind))]))
-    s_sum = dist.sum(axis=1)
+def fill_hash_matrix(um, sim, ind, n_neighbors=6):
+    um_dense = np.vstack(tuple([sim[i].reshape(1,n_neighbors) * um[ind[i]] for i in range(len(ind))]))
+    s_sum = sim.sum(axis=1)
     return (um_dense.T / s_sum).T
 
 
