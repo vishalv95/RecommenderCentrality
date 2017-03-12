@@ -5,7 +5,7 @@ from scipy.sparse import csr_matrix
 from sklearn.preprocessing import normalize
 from sklearn.cross_validation import KFold
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.neighbors import LSHForest 
+from sklearn.neighbors import LSHForest
 import sys
 
 user_id_map = dict()
@@ -83,10 +83,11 @@ def fold(users, movies, ratings):
 
         # Compute user similarity via LSH and movie similarity via MMM
         sim, ind = hash_user_similarity(um)
-        # s_movie = compute_movie_similarity(um)
+        s_movie = compute_movie_similarity(um)
 
         # Complete the sparse UM matrix via the collaborative filtering algorithm
-        um_dense = fill_hash_matrix(um, sim, ind)
+        um_dense = item_based_recommendation(um, s_movie)
+        # um_dense = fill_hash_matrix(um, sim, ind)
 
         # Compute metrics for the completed matrix with users that are in train and test
         intersect_users = set(users_test) & set(users_train)
@@ -105,10 +106,10 @@ def precision_at_N(um_dense, user_actual_list, user_movie_train_pairs, top_N=6):
     for user, movie_ratings in user_actual_list:
         top_sorted_actual = sorted(movie_ratings, key=lambda x : x[1])[::-1][:top_N]
 
-        # Sort the predictions by rating and filter out the movies that were in the training set 
+        # Sort the predictions by rating and filter out the movies that were in the training set
         top_sorted_predicted = np.argsort(um_dense[user]).tolist()[::-1]
         top_sorted_predicted = [m for m in top_sorted_predicted if (user, m) not in user_movie_train_pairs][:top_N]
-        
+
         overlap = len({m for m,r in top_sorted_actual} & set(top_sorted_predicted))
         total_rated = min(len(top_sorted_actual), len(top_sorted_predicted))
         if total_rated: precisions.append(overlap / total_rated)
@@ -119,15 +120,17 @@ def rmse(um_dense, user_actual_list):
     errors = []
     for user, movie_ratings in user_actual_list:
         for movie, actual_rating in movie_ratings:
+            print user, movie
             predicted_rating = um_dense[user][movie]
             errors.append((predicted_rating - actual_rating)**2)
     return np.sqrt(np.mean(errors))
 
 
+# Should just do the l1 normalization of the similarity vectors
 def fill_hash_matrix(um, sim, ind, n_neighbors=6):
+    sim = normalize(sim, axis=1, norm='l1')
     um_dense = np.vstack(tuple([sim[i].reshape(1,n_neighbors) * um[ind[i]] for i in range(len(ind))]))
-    s_sum = sim.sum(axis=1)
-    return (um_dense.T / s_sum).T
+    return um_dense
 
 
 def fill_matrix(s_user, um):
@@ -140,6 +143,10 @@ def compute_top_movies(um):
     averages = um.sum(0)/(um != 0).sum(0)
     return np.argsort(averages[0]).tolist()[::-1]
 
+def item_based_recommendation(um_sparse, s_movie):
+    s_movie = normalize(s_movie, axis=0, norm='l1')
+    um_dense = um_sparse * s_movie
+    return um_dense
 
 if __name__ == "__main__":
     filename = sys.argv[1]
