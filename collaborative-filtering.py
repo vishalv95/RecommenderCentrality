@@ -1,7 +1,7 @@
 from __future__ import division
 import pandas as pd
 import numpy as np
-from scipy.sparse import csr_matrix
+from scipy.sparse import coo_matrix, csr_matrix
 from sklearn.preprocessing import normalize
 from sklearn.cross_validation import KFold
 from sklearn.metrics.pairwise import cosine_similarity
@@ -63,15 +63,17 @@ def compute_movie_similarity(um):
     return s_movie
 
 
-def hash_user_similarity(um):
+def hash_user_similarity(um, num_neighbors=6):
     lsh = LSHForest()
     lsh.fit(um)
-    dist, ind = lsh.kneighbors(um, n_neighbors=6, return_distance=True)
+
+    # Don't compare to self, remove first column, call 7 neighbors
+    dist, ind = lsh.kneighbors(um, n_neighbors=num_neighbors+1, return_distance=True)
     sim = 1 - dist
-    return sim, ind
+    return sim[:,1:], ind[:,1:]
 
 
-def fold(users, movies, ratings):
+def validation(users, movies, ratings):
     kf = KFold(len(users), n_folds=10, shuffle=True)
     for train, test in kf:
         # Split the ratings into train and test
@@ -86,7 +88,7 @@ def fold(users, movies, ratings):
         s_movie = compute_movie_similarity(um)
 
         # Complete the sparse UM matrix via the collaborative filtering algorithm
-        um_dense = item_based_recommendation(um, s_movie)
+        um_dense = item_based_recommendation_nnz(um, s_movie)
         # um_dense = fill_hash_matrix(um, sim, ind)
 
         # Compute metrics for the completed matrix with users that are in train and test
@@ -94,39 +96,40 @@ def fold(users, movies, ratings):
         test_list = zip(users_test, movies_test, ratings_test)
 
         # Exclude the training ratings to avoid lookahead bias
-        user_actual_list = [(user, [(m,r) for u,m,r in test_list if u==user]) for user in intersect_users]
-        user_movie_train_pairs = set(zip(users_train, movies_train))
+        user_mr_test = [(user, [(m,r) for u,m,r in test_list if u==user]) for user in intersect_users]
+        
+        print("RMSE: " + str(rmse(um_dense, user_mr_test)))
+        print("Precision @ N: " + str(precision_at_N(um_dense, user_mr_test)))
 
-        # print(rmse(um_dense, user_actual_list))
-        print(precision_at_N(um_dense, user_actual_list, user_movie_train_pairs))
 
-
-def precision_at_N(um_dense, user_actual_list, user_movie_train_pairs, top_N=6):
+def precision_at_N(um_dense, user_mr_test, top_N=6):
     precisions = []
-    for user, movie_ratings in user_actual_list:
-        top_sorted_actual = sorted(movie_ratings, key=lambda x : x[1])[::-1][:top_N]
+    
+    for user, movie_ratings in user_mr_test:
+        # Compute the top movies in the test set for a user, and the ordering of those movies by model prediction
+        sorted_test_movies_actual = np.array([movie for movie, rating in sorted(movie_ratings, key=lambda x : x[1], reverse=True)])
+        sorted_test_movies_predict = np.argsort(um_dense[user,:])[::-1]
 
-        # Sort the predictions by rating and filter out the movies that were in the training set
-        top_sorted_predicted = np.argsort(um_dense[user]).tolist()[::-1]
-        top_sorted_predicted = [m for m in top_sorted_predicted if (user, m) not in user_movie_train_pairs][:top_N]
+        top_test_movies_actual = sorted_test_movies_actual[:top_N]
+        top_test_movies_predict = sorted_test_movies_predict[np.in1d(sorted_test_movies_predict, sorted_test_movies_actual)][:top_N]
 
-        overlap = len({m for m,r in top_sorted_actual} & set(top_sorted_predicted))
-        total_rated = min(len(top_sorted_actual), len(top_sorted_predicted))
+        # Compute % overlap in top N movies between actual and predicted as precision @ N
+        overlap = len(set(top_test_movies_actual) & set(top_test_movies_predict))
+        total_rated = min(len(top_test_movies_actual), len(top_test_movies_predict))
         if total_rated: precisions.append(overlap / total_rated)
+
     return np.mean(precisions)
 
-
-def rmse(um_dense, user_actual_list):
+# Compute the root mean squared error between a prediction and an actual test rating
+def rmse(um_dense, user_mr_test):
     errors = []
-    for user, movie_ratings in user_actual_list:
+    for user, movie_ratings in user_mr_test:
         for movie, actual_rating in movie_ratings:
-            print user, movie
-            predicted_rating = um_dense[user][movie]
+            predicted_rating = um_dense[user, movie]
             errors.append((predicted_rating - actual_rating)**2)
     return np.sqrt(np.mean(errors))
 
 
-# Should just do the l1 normalization of the similarity vectors
 def fill_hash_matrix(um, sim, ind, n_neighbors=6):
     sim = normalize(sim, axis=1, norm='l1')
     um_dense = np.vstack(tuple([sim[i].reshape(1,n_neighbors) * um[ind[i]] for i in range(len(ind))]))
@@ -134,23 +137,48 @@ def fill_hash_matrix(um, sim, ind, n_neighbors=6):
 
 
 def fill_matrix(s_user, um):
+    normalize(s_user, axis=1, norm='l1')
     um_dense = np.dot(s_user, um)
-    s_sum = s_user.sum(axis=0)
-    return (um_dense.T / s_sum).T
+    return um_dense
 
 
 def compute_top_movies(um):
     averages = um.sum(0)/(um != 0).sum(0)
     return np.argsort(averages[0]).tolist()[::-1]
 
+
 def item_based_recommendation(um_sparse, s_movie):
     s_movie = normalize(s_movie, axis=0, norm='l1')
     um_dense = um_sparse * s_movie
     return um_dense
 
+
+# Item based recommendation with non zero ratings
+def item_based_recommendation_nnz(um_sparse, s_movie):
+    # Get nonzero indices of each user vector
+    nnz = [np.nonzero(um_sparse[i])[1] for i in range(um_sparse.shape[0])]
+
+    # Compute the weighted average user_movie_rating*m_sim_weight for nonzero um ratings
+    rows = []
+    for k in range(um_sparse.shape[0]):
+        row = um_sparse[k,nnz[k]] * normalize(s_movie[nnz[k],:], axis=0, norm='l1')
+        rows += [row.toarray().flatten()]
+    um_dense = np.vstack(tuple(rows))
+    return um_dense
+
+
+# Construct the graph from an index and similarity matrix 
+def construct_graph(ind, sim):
+    num_vertices = ind.shape[0]
+    num_neighbors = ind.shape[1]
+    coordinates = [(i, ind[i][j], sim[i][j]) for i in range(num_vertices) for j in range(num_neighbors)]
+    i,j,data = zip(*coordinates)
+    return coo_matrix((data, (i,j)), shape=(num_vertices, num_vertices)).tocsr()
+
+
 if __name__ == "__main__":
     filename = sys.argv[1]
     users, movies, ratings = read_csv_data(filename) if filename[-3:] == 'csv' else read_dat_data(filename)
-    fold(users, movies, ratings)
+    validation(users, movies, ratings)
 
     print("Done.")

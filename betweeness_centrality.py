@@ -117,7 +117,6 @@ def brandes_bc(graph, vertex_set):
     return betweeness_centrality
 
 
-
 # TODO: Make sure vertex_sp_count is updated
 def get_shortest_path(next_node, start, end, vertex_sp_count):
     if (next_node[start][end]) is None :
