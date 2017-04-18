@@ -7,70 +7,7 @@ from sklearn.cross_validation import KFold
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import LSHForest
 import sys
-
-user_id_map = dict()
-movie_id_map = dict()
-
-def read_csv_data(filename):
-    ratings_df = pd.read_csv(filename)
-    users = ratings_df["userId"].as_matrix()
-    movies = ratings_df["movieId"].as_matrix()
-    ratings = ratings_df["rating"].as_matrix()
-
-    global user_id_map
-    user_id_map = {user: i for i, user in enumerate(list(set(users)))}
-    user_ind = np.array([user_id_map[user] for user in users])
-
-    global movie_id_map
-    movie_id_map = {movie: i for i, movie in enumerate(list(set(movies)))}
-    movie_ind = np.array([movie_id_map[movie] for movie in movies])
-
-    return (user_ind, movie_ind, ratings)
-
-
-def read_dat_data(filename):
-    ratings_df = pd.read_csv(filename, sep='::', header=None)
-    ratings_df.columns = ["userId", "movieId", "rating", "timestamp"]
-    users = ratings_df["userId"].as_matrix()
-    movies = ratings_df["movieId"].as_matrix()
-    ratings = ratings_df["rating"].as_matrix()
-
-    global user_id_map
-    user_id_map = {user: i for i, user in enumerate(list(set(users)))}
-    user_ind = np.array([user_id_map[user] for user in users])
-
-    global movie_id_map
-    movie_id_map = {movie: i for i, movie in enumerate(list(set(movies)))}
-    movie_ind = np.array([movie_id_map[movie] for movie in movies])
-
-    return (user_ind, movie_ind, ratings)
-
-
-def convert_to_um_matrix(users, movies, ratings):
-    um = csr_matrix((ratings, (users, movies)), shape=(len(user_id_map), len(movie_id_map)))
-    return um
-
-
-def compute_user_similarity(um):
-    s_user = cosine_similarity(um, um, dense_output=False)
-    s_user.setdiag(0)
-    return s_user
-
-
-def compute_movie_similarity(um):
-    s_movie = cosine_similarity(um.T, um.T, dense_output=False)
-    s_movie.setdiag(0)
-    return s_movie
-
-
-def hash_user_similarity(um, num_neighbors=6):
-    lsh = LSHForest()
-    lsh.fit(um)
-
-    # Don't compare to self, remove first column, call 7 neighbors
-    dist, ind = lsh.kneighbors(um, n_neighbors=num_neighbors+1, return_distance=True)
-    sim = 1 - dist
-    return sim[:,1:], ind[:,1:]
+from similarity import *
 
 
 def validation(users, movies, ratings):
@@ -119,6 +56,14 @@ def precision_at_N(um_dense, user_mr_test, top_N=6):
         if total_rated: precisions.append(overlap / total_rated)
 
     return np.mean(precisions)
+
+# TODO: Other metrics
+def ndcg(um_dense, user_mr_test, top_N=6):
+    pass
+
+
+def map(um_dense, user_mr_test, top_N=6):
+    pass
 
 # Compute the root mean squared error between a prediction and an actual test rating
 def rmse(um_dense, user_mr_test):

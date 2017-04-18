@@ -3,9 +3,11 @@ import numpy as np
 import networkx as nx
 import time
 import pandas
+from similarity import *
+import sys
 
-def compute_centrality(sim):
-    start = time.time()
+# TODO: Use larger matrices
+def compute_centrality(sim, graph_type):
     G = nx.from_numpy_matrix(sim.toarray())
     centrality_functions = {"degree" : nx.degree_centrality,
                             "closeness" : nx.closeness_centrality,
@@ -16,6 +18,18 @@ def compute_centrality(sim):
     data = {name: f(G) for name,f in centrality_functions.items()}
     df = pandas.DataFrame.from_dict(data)
     df.sort_index(inplace=True)
-    df.to_csv("centrality.csv", index=True)
+    df.to_csv("./data/{}_centrality.csv".format(graph_type), index=True)
 
     return df.as_matrix()
+
+if __name__ == '__main__':
+    filename = sys.argv[1]
+    users, movies, ratings = read_csv_data(filename) if filename[-3:] == 'csv' else read_dat_data(filename)
+
+    um = convert_to_um_matrix(users, movies, ratings)
+    s_user = compute_user_similarity(um)
+    s_movie = compute_movie_similarity(um)
+
+    compute_centrality(s_user, 'user')
+    compute_centrality(s_movie, 'movie')
+
