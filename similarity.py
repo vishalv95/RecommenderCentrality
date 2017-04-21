@@ -8,9 +8,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import LSHForest
 import sys
 
-user_id_map = dict()
-movie_id_map = dict()
-
 def read_csv_data(filename):
     # Read users, movies, ratings as numpy arrays
     ratings_df = pd.read_csv(filename)
@@ -18,17 +15,7 @@ def read_csv_data(filename):
     movies = ratings_df["movieId"].as_matrix()
     ratings = ratings_df["rating"].as_matrix()
 
-    # Map user ids to indices
-    global user_id_map
-    user_id_map = {user: i for i, user in enumerate(list(set(users)))}
-    user_ind = np.array([user_id_map[user] for user in users])
-
-    # Map movie ids to indices
-    global movie_id_map
-    movie_id_map = {movie: i for i, movie in enumerate(list(set(movies)))}
-    movie_ind = np.array([movie_id_map[movie] for movie in movies])
-
-    return (user_ind, movie_ind, ratings)
+    return (users, movies, ratings)
 
 
 def read_dat_data(filename):
@@ -39,21 +26,11 @@ def read_dat_data(filename):
     movies = ratings_df["movieId"].as_matrix()
     ratings = ratings_df["rating"].as_matrix()
 
-    # Map user ids to indices
-    global user_id_map
-    user_id_map = {user: i for i, user in enumerate(list(set(users)))}
-    user_ind = np.array([user_id_map[user] for user in users])
-
-    # Map movie ids to indices
-    global movie_id_map
-    movie_id_map = {movie: i for i, movie in enumerate(list(set(movies)))}
-    movie_ind = np.array([movie_id_map[movie] for movie in movies])
-
-    return (user_ind, movie_ind, ratings)
+    return (users, movies, ratings)
 
 
 def convert_to_um_matrix(users, movies, ratings):
-    um = csr_matrix((ratings, (users, movies)), shape=(len(user_id_map), len(movie_id_map)))
+    um = csr_matrix((ratings, (users, movies)), shape=(len(set(users)), len(set(movies))))
     return um
 
 
