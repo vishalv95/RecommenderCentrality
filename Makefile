@@ -1,15 +1,15 @@
-PYTHON   := python3.5
-PIP      := pip3.5
+PYTHON   := venv/bin/python2.7
 PYLINT   := pylint
 AUTOPEP8 := autopep8
 
 test:
-	make dependencies
-	python3.5 collaborative-filtering.py data/ratings.csv
+	$(PYTHON) download.py
+	$(PYTHON) collaborative-filtering.py data/ratings.csv
 
-dependencies:
+download-data:
 	rm -rf data
 	wget http://files.grouplens.org/datasets/movielens/ml-latest-small.zip
+	wget http://files.grouplens.org/datasets/movielens/ml-20m.zip
 	unzip ml-latest-small.zip
 	mv ml-latest-small data
 	rm -rf ml-latest-small.zip
