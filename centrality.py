@@ -12,13 +12,16 @@ def compute_centrality(sim, graph_type):
     centrality_functions = {"degree" : nx.degree_centrality,
                             "closeness" : nx.closeness_centrality,
                             "betweenness" : nx.betweenness_centrality,
-                            "eigenvector" : nx.eigenvector_centrality,
-                            "katz" : nx.katz_centrality}
-
-    data = {name: f(G) for name,f in centrality_functions.items()}
-    df = pandas.DataFrame.from_dict(data)
-    df.sort_index(inplace=True)
-    df.to_csv("./data/{}_centrality.csv".format(graph_type), index=True)
+                            "eigenvector" : nx.eigenvector_centrality
+                            #"katz" : nx.katz_centrality}
+                            }
+    data = dict()
+    for name, f in centrality_functions.items():
+        print(graph_type, name)
+        data[name] = f(G)
+        df = pandas.DataFrame.from_dict(data)
+        df.sort_index(inplace=True)
+        df.to_csv("./data/{}_centrality.csv".format(graph_type), index=True)
 
     return df.as_matrix()
 
