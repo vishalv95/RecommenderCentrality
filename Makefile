@@ -1,4 +1,4 @@
-PYTHON   := venv/bin/python2.7
+PYTHON   := python2.7
 
 test:
 	$(PYTHON) download.py
