@@ -30,7 +30,7 @@ def read_dat_data(filename):
 
 
 def convert_to_um_matrix(users, movies, ratings):
-    um = csr_matrix((ratings, (users, movies)), shape=(len(set(users)), len(set(movies))))
+    um = csr_matrix((ratings, (users, movies)))
     return um
 
 

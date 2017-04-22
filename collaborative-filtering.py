@@ -34,14 +34,14 @@ def validation(users, movies, ratings):
 
         # Exclude the training ratings to avoid lookahead bias
         user_mr_test = [(user, [(m,r) for u,m,r in test_list if u==user]) for user in intersect_users]
-        
+
         print("RMSE: " + str(rmse(um_dense, user_mr_test)))
         print("Precision @ N: " + str(precision_at_N(um_dense, user_mr_test)))
 
 
 def precision_at_N(um_dense, user_mr_test, top_N=6):
     precisions = []
-    
+
     for user, movie_ratings in user_mr_test:
         # Compute the top movies in the test set for a user, and the ordering of those movies by model prediction
         sorted_test_movies_actual = np.array([movie for movie, rating in sorted(movie_ratings, key=lambda x : x[1], reverse=True)])
@@ -112,7 +112,7 @@ def item_based_recommendation_nnz(um_sparse, s_movie):
     return um_dense
 
 
-# Construct the graph from an index and similarity matrix 
+# Construct the graph from an index and similarity matrix
 def construct_graph(ind, sim):
     num_vertices = ind.shape[0]
     num_neighbors = ind.shape[1]
