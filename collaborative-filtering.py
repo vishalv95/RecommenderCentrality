@@ -58,6 +58,22 @@ def precision_at_N(um_dense, user_mr_test, top_N=6):
     return np.mean(precisions)
 
 # TODO: Other metrics
+def recall_at_N(um_dense, user_mr_test):
+    recalls = []
+
+    for user, movie_ratings in user_mr_test:
+        # Compute "relevant" test movies as those with > 3.5 rating
+        top_test_movies_actual = np.array([movie for movie, rating in sorted(movie_ratings, key=lambda x : x[1], reverse=True) if rating > 3.5])
+        top_test_movies_predict = np.argsort(um_dense[user,:])[::-1][:len(top_test_movies_actual)]
+
+        # Compute % overlap in top N movies between actual and predicted as recall @ N
+        overlap = len(set(top_test_movies_actual) & set(top_test_movies_predict))
+        num_relevant = min(len(top_test_movies_actual), len(top_test_movies_predict))
+        if num_relevant: recalls.append(overlap / num_relevant)
+
+    return np.mean(recalls)
+
+
 def ndcg(um_dense, user_mr_test, top_N=6):
     pass
 
