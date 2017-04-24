@@ -55,7 +55,16 @@ def hash_user_similarity(um, num_neighbors=6):
     sim = 1 - dist
     return sim[:,1:], ind[:,1:]
 
-# TODO: Convert the hash scores to an adjacency matrix usable for centrality calculations
+# Convert the hash scores to an adjacency matrix usable for centrality calculations
 def hash_to_similarity(sim, ind):
-    pass
-
+    # Read coordinates and weights from the sim and ind matrices
+    row_ind, col_ind, data = [], [], []
+    for index, sim_val in np.ndenumerate(sim):
+        row_ind.append(index[0])
+        col_ind.append(ind[index])
+        data.append(sim_val)
+    
+    # Load coordinates into sparse matrix, convert to dense
+    graph_degree = sim.shape[0]
+    adj = csr_matrix((data, (row_ind, col_ind)), shape=(graph_degree, graph_degree)).toarray()
+    return adj
