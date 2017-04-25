@@ -15,17 +15,21 @@ def load_similarity(ratings_file, node_type):
 	sim = compute_user_similarity(um) if node_type == 'user' else compute_movie_similarity(um)
 	return sim
 	
-
-def combine(similarity_matrix, centrality_array, alpha=0.1):
+# Axis should 1 for row (user case), 0 for col (item case)
+def combine(similarity_matrix, centrality_array, axis, alpha=.9):
 	# Add weighted centrality score to each row in similarity matrix
 
 	# TODO: Experiment with where we do the normalization step, before/after combine
-	new_sim = np.apply_along_axis(lambda row: alpha*row + (1-alpha)*centrality_array, axis=1, arr=similarity_matrix)
+	# Since centrality is already normalized, we might want to normalize similarity first, but that would require renormalizing the combination
+	centrality_array = normalize(centrality_array, norm='l1').flatten()
+	similarity_matrix = normalize(similarity_matrix, norm='l1', axis=axis)
+	new_sim = np.apply_along_axis(lambda vec: alpha*vec + (1-alpha)*centrality_array, axis=axis, arr=similarity_matrix)
 	return new_sim
 
 
 if __name__ == '__main__':
 	centrality_array = load_centrality('./centrality_data/user_centrality.csv', 'user', 'degree')
 	sim = load_similarity('./data/ratings.csv', 'user')
-	new_sim = combine(sim.toarray(), centrality_array)
-	
+	new_sim = combine(sim.toarray(), centrality_array, axis=0)
+
+
