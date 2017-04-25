@@ -55,6 +55,7 @@ def hash_user_similarity(um, num_neighbors=6):
     sim = 1 - dist
     return sim[:,1:], ind[:,1:]
 
+
 # Convert the hash scores to an adjacency matrix usable for centrality calculations
 def hash_to_similarity(sim, ind):
     # Read coordinates and weights from the sim and ind matrices
@@ -68,3 +69,4 @@ def hash_to_similarity(sim, ind):
     graph_degree = sim.shape[0]
     adj = csr_matrix((data, (row_ind, col_ind)), shape=(graph_degree, graph_degree)).toarray()
     return adj
+    
