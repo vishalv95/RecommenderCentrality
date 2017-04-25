@@ -66,17 +66,11 @@ def hash_movie_similarity(um, num_neighbors=6):
     return sim[:,1:], ind[:,1:]
 
 
-# Convert the hash scores to an adjacency matrix usable for centrality calculations
-def hash_to_similarity(sim, ind):
-    # Read coordinates and weights from the sim and ind matrices
-    row_ind, col_ind, data = [], [], []
-    for index, sim_val in np.ndenumerate(sim):
-        row_ind.append(index[0])
-        col_ind.append(ind[index])
-        data.append(sim_val)
-    
-    # Load coordinates into sparse matrix, convert to dense
-    graph_degree = sim.shape[0]
-    adj = csr_matrix((data, (row_ind, col_ind)), shape=(graph_degree, graph_degree)).toarray()
-    return adj
+# Construct the graph from an index and similarity matrix
+def construct_graph(ind, sim):
+    degree = ind.shape[0]
+    num_neighbors = ind.shape[1]
+    coordinates = [(i, ind[i][j], sim[i][j]) for i in range(degree) for j in range(num_neighbors)]
+    i,j,data = zip(*coordinates)
+    return csr_matrix((data, (i,j)), shape=(degree, degree)).toarray()
     
