@@ -1,7 +1,7 @@
 from __future__ import division
 import pandas as pd
 import numpy as np
-from scipy.sparse import coo_matrix, csr_matrix
+from scipy.sparse import csr_matrix
 from sklearn.preprocessing import normalize
 from sklearn.cross_validation import KFold
 from sklearn.metrics.pairwise import cosine_similarity
@@ -26,7 +26,7 @@ def validation(users, movies, ratings):
 
         # Complete the sparse UM matrix via the collaborative filtering algorithm
         um_dense = item_based_recommendation_nnz(um, s_movie)
-        # um_dense = fill_hash_matrix(um, sim, ind)
+        # um_dense = complete_hash_matrix(um, sim, ind)
 
         # Compute metrics for the completed matrix with users that are in train and test
         intersect_users = set(users_test) & set(users_train)
@@ -35,8 +35,9 @@ def validation(users, movies, ratings):
         # Exclude the training ratings to avoid lookahead bias
         user_mr_test = [(user, [(m,r) for u,m,r in test_list if u==user]) for user in intersect_users]
 
-        print("RMSE: " + str(rmse(um_dense, user_mr_test)))
-        print("Precision @ N: " + str(precision_at_N(um_dense, user_mr_test)))
+        print("Precision @ N: %.3f" % (precision_at_N(um_dense, user_mr_test),))
+        print("Recall: %.3f" % (recall(um_dense, user_mr_test),))
+        print("RMSE: %.3f" % (rmse(um_dense, user_mr_test),))
 
 
 def precision_at_N(um_dense, user_mr_test, top_N=6):
@@ -58,13 +59,14 @@ def precision_at_N(um_dense, user_mr_test, top_N=6):
     return np.mean(precisions)
 
 # TODO: Other metrics
-def recall_at_N(um_dense, user_mr_test):
+def recall(um_dense, user_mr_test):
     recalls = []
 
     for user, movie_ratings in user_mr_test:
         # Compute "relevant" test movies as those with > 3.5 rating
-        top_test_movies_actual = np.array([movie for movie, rating in sorted(movie_ratings, key=lambda x : x[1], reverse=True) if rating > 3.5])
-        top_test_movies_predict = np.argsort(um_dense[user,:])[::-1][:len(top_test_movies_actual)]
+        top_test_movies_actual = [movie for movie, rating in sorted(movie_ratings, key=lambda x : x[1], reverse=True) if rating >= 3]
+        sorted_test_movies_predict = np.argsort(um_dense[user,:])[::-1]
+        top_test_movies_predict = sorted_test_movies_predict[np.in1d(sorted_test_movies_predict, top_test_movies_actual)][:len(top_test_movies_actual)]
 
         # Compute % overlap in top N movies between actual and predicted as recall @ N
         overlap = len(set(top_test_movies_actual) & set(top_test_movies_predict))
@@ -73,11 +75,12 @@ def recall_at_N(um_dense, user_mr_test):
 
     return np.mean(recalls)
 
-
+# TODO: Might not be worth doing this 
 def ndcg(um_dense, user_mr_test, top_N=6):
     pass
 
 
+# This may just be equivalent to precision at N for this application
 def map(um_dense, user_mr_test, top_N=6):
     pass
 
@@ -91,27 +94,27 @@ def rmse(um_dense, user_mr_test):
     return np.sqrt(np.mean(errors))
 
 
-def fill_hash_matrix(um, sim, ind, n_neighbors=6):
+def complete_hash_matrix(um, sim, ind, n_neighbors=6):
     sim = normalize(sim, axis=1, norm='l1')
     um_dense = np.vstack(tuple([sim[i].reshape(1,n_neighbors) * um[ind[i]] for i in range(len(ind))]))
     return um_dense
 
 
-def fill_matrix(s_user, um):
-    normalize(s_user, axis=1, norm='l1')
+def user_based_recommendation(s_user, um):
+    s_user = normalize(s_user, axis=1, norm='l1')
     um_dense = np.dot(s_user, um)
     return um_dense
-
-
-def compute_top_movies(um):
-    averages = um.sum(0)/(um != 0).sum(0)
-    return np.argsort(averages[0]).tolist()[::-1]
 
 
 def item_based_recommendation(um_sparse, s_movie):
     s_movie = normalize(s_movie, axis=0, norm='l1')
     um_dense = um_sparse * s_movie
     return um_dense
+
+
+def compute_top_movies(um):
+    averages = um.sum(0)/(um != 0).sum(0)
+    return np.argsort(averages[0]).tolist()[::-1]
 
 
 # Item based recommendation with non zero ratings
@@ -126,15 +129,6 @@ def item_based_recommendation_nnz(um_sparse, s_movie):
         rows += [row.toarray().flatten()]
     um_dense = np.vstack(tuple(rows))
     return um_dense
-
-
-# Construct the graph from an index and similarity matrix
-def construct_graph(ind, sim):
-    num_vertices = ind.shape[0]
-    num_neighbors = ind.shape[1]
-    coordinates = [(i, ind[i][j], sim[i][j]) for i in range(num_vertices) for j in range(num_neighbors)]
-    i,j,data = zip(*coordinates)
-    return coo_matrix((data, (i,j)), shape=(num_vertices, num_vertices)).tocsr()
 
 
 if __name__ == "__main__":
