@@ -56,6 +56,16 @@ def hash_user_similarity(um, num_neighbors=6):
     return sim[:,1:], ind[:,1:]
 
 
+def hash_movie_similarity(um, num_neighbors=6):
+    lsh = LSHForest()
+    lsh.fit(um.T)
+
+    # Don't compare to self, remove first column, call 7 neighbors
+    dist, ind = lsh.kneighbors(um.T, n_neighbors=num_neighbors+1, return_distance=True)
+    sim = 1 - dist
+    return sim[:,1:], ind[:,1:]
+
+
 # Convert the hash scores to an adjacency matrix usable for centrality calculations
 def hash_to_similarity(sim, ind):
     # Read coordinates and weights from the sim and ind matrices
