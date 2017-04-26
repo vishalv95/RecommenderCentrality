@@ -8,10 +8,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import LSHForest
 import sys
 from similarity import *
+from combine import *
 
 
-def validation(users, movies, ratings):
-    kf = KFold(len(users), n_folds=10, shuffle=True)
+def validation_old(users, movies, ratings):
+    kf = KFold(len(ratings), n_folds=10, shuffle=True)
     for train, test in kf:
         # Split the ratings into train and test
         users_train, movies_train, ratings_train = users[train], movies[train], ratings[train]
@@ -36,8 +37,68 @@ def validation(users, movies, ratings):
         user_mr_test = [(user, [(m,r) for u,m,r in test_list if u==user]) for user in intersect_users]
 
         print("Precision @ N: %.3f" % (precision_at_N(um_dense, user_mr_test),))
-        print("Recall: %.3f" % (recall(um_dense, user_mr_test),))
+        print("Recall: %.3f" % (recall_at_N(um_dense, user_mr_test),))
         print("RMSE: %.3f" % (rmse(um_dense, user_mr_test),))
+
+
+def validation(users, movies, ratings):
+    kf = KFold(len(ratings), n_folds=10, shuffle=True)
+    for train, test in kf:
+        # Split the ratings into train and test
+        users_train, movies_train, ratings_train = users[train], movies[train], ratings[train]
+        users_test, movies_test, ratings_test = users[test], movies[test], ratings[test]
+
+        um_dense = train_model(users_train, movies_train, ratings_train, method='user_centrality', centrality_measure='degree')
+        results_df = serialize_results(um_dense, users_train, movies_train)
+        test_df = save_test_data(users_test, movies_test, ratings_test)
+        assert False
+
+def train_model(users, movies, ratings, method, centrality_measure=None, alpha=.9):
+    # Convert the train ratings into a User-Movie matrix
+    um_sparse = convert_to_um_matrix(users, movies, ratings)
+
+    # Complete the sparse UM matrix via the respective collaborative filtering algorithm
+
+    # TODO: User CF is broken
+    if method == 'user':
+        similarity_matrix = compute_user_similarity(um_sparse)
+        um_dense = user_based_recommendation_nnz(um_sparse, similarity_matrix)
+
+    elif method == 'movie':
+        similarity_matrix = compute_movie_similarity(um_sparse)
+        um_dense = item_based_recommendation_nnz(um_sparse, similarity_matrix)
+
+    elif method == 'user_centrality':
+        similarity_matrix = compute_augmented_similarity(um_sparse, node_type='user', centrality_measure=centrality_measure, alpha=.9)
+        um_dense = user_based_recommendation(um_sparse, similarity_matrix)
+
+    elif method == 'movie_centrality':
+        similarity_matrix = compute_augmented_similarity(um_sparse, node_type='movie', centrality_measure=centrality_measure, alpha=.9)
+        um_dense = item_based_recommendation(um_sparse, similarity_matrix)
+
+    return um_dense
+
+
+def serialize_results(um_dense, users_train, movies_train):
+    train_um_pairs = set(zip(users_train, movies_train))
+    results_umr = [(um[0], um[1], rating) for um, rating in  np.ndenumerate(um_dense) if um not in train_um_pairs]
+
+    results_df = pd.DataFrame(results_umr, columns=['user', 'movie', 'predicted_rating'])
+    results_df = results_df.groupby('user').apply(lambda x: x.sort_values('predicted_rating', ascending=False))
+    
+    results_df.index = range(len(results_df))
+    results_df.to_csv('./results.csv', index=False)
+    return results_df
+
+
+def save_test_data(users_test, movies_test, ratings_test):
+    test_umr = zip(users_test, movies_test, ratings_test)
+    test_df = pd.DataFrame(test_umr, columns=['user', 'movie', 'actual_rating'])
+    test_df = test_df.groupby('user').apply(lambda x: x.sort_values('actual_rating', ascending=False))
+
+    test_df.index = range(len(test_df))
+    test_df.to_csv('./test.csv', index=False)
+    return test_df
 
 
 def precision_at_N(um_dense, user_mr_test, top_N=6):
@@ -59,7 +120,7 @@ def precision_at_N(um_dense, user_mr_test, top_N=6):
     return np.mean(precisions)
 
 # TODO: Other metrics
-def recall(um_dense, user_mr_test):
+def recall_at_N(um_dense, user_mr_test, top_N=6):
     recalls = []
 
     for user, movie_ratings in user_mr_test:
@@ -75,13 +136,16 @@ def recall(um_dense, user_mr_test):
 
     return np.mean(recalls)
 
-# TODO: Might not be worth doing this 
-def ndcg(um_dense, user_mr_test, top_N=6):
+
+def precision_threshold(um_dense, threshold):
     pass
 
 
-# This may just be equivalent to precision at N for this application
-def map(um_dense, user_mr_test, top_N=6):
+def recall_threshold(um_dense, threshold):
+    pass
+
+
+def ndcg(um_dense):
     pass
 
 # Compute the root mean squared error between a prediction and an actual test rating
@@ -99,7 +163,7 @@ def compute_top_movies(um):
     return np.argsort(averages[0]).tolist()[::-1]
 
 
-def complete_hash_matrix(um, sim, ind, n_neighbors=6):
+def user_based_recommendation_lsh(um, sim, ind, n_neighbors=6):
     sim = normalize(sim, axis=1, norm='l1')
     um_dense = np.vstack(tuple([sim[i].reshape(1,n_neighbors) * um[ind[i]] for i in range(len(ind))]))
     return um_dense
@@ -116,7 +180,7 @@ def item_based_recommendation(um_sparse, s_movie):
     um_dense = um_sparse * s_movie
     return um_dense
 
-    
+
 def user_based_recommendation_nnz(um_sparse, s_user):
     # Get nonzero indices of each movie vector
     nnz = [np.nonzero(um_sparse.T[i])[1] for i in range(um_sparse.shape[1])]
@@ -128,7 +192,7 @@ def user_based_recommendation_nnz(um_sparse, s_user):
         rows += [row.toarray().flatten()]
     um_dense = np.vstack(tuple(rows)).T
     return um_dense
-    
+
 
 # Item based recommendation with non zero ratings
 def item_based_recommendation_nnz(um_sparse, s_movie):

@@ -21,7 +21,7 @@ def compute_centrality(sim, graph_type):
         data[name] = f(G)
         df = pandas.DataFrame.from_dict(data)
         df.sort_index(inplace=True)
-        df.to_csv("./data/{}_centrality.csv".format(graph_type), index=True)
+        df.to_csv("./centrality_data/{}_centrality.csv".format(graph_type), index=True)
 
     return df.as_matrix()
 

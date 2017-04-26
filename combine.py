@@ -3,7 +3,8 @@ import numpy as np
 from sklearn.preprocessing import normalize
 from similarity import *
 
-def load_centrality(centrality_file, node_type, centrality_measure):
+def load_centrality(node_type, centrality_measure):
+	centrality_file = './centrality_data/{}_centrality.csv'.format(node_type)
 	centrality_df = pd.read_csv(centrality_file)
 	centrality_array = centrality_df[centrality_measure].as_matrix()
 	return centrality_array
@@ -15,21 +16,23 @@ def load_similarity(ratings_file, node_type):
 	sim = compute_user_similarity(um) if node_type == 'user' else compute_movie_similarity(um)
 	return sim
 	
+	
 # Axis should 1 for row (user case), 0 for col (item case)
-def combine(similarity_matrix, centrality_array, axis, alpha=.9):
-	# Add weighted centrality score to each row in similarity matrix
-
-	# TODO: Experiment with where we do the normalization step, before/after combine
-	# Since centrality is already normalized, we might want to normalize similarity first, but that would require renormalizing the combination
+def compute_augmented_similarity(um_sparse, node_type, centrality_measure, alpha=.9):
+	centrality_array = load_centrality(node_type, centrality_measure)
 	centrality_array = normalize(centrality_array, norm='l1').flatten()
+
+	axis = 1 if node_type == 'user' else 0
+	similarity_matrix = compute_user_similarity(um_sparse) if node_type == 'user' else compute_movie_similarity(um_sparse)
+	similarity_matrix = similarity_matrix.toarray()
 	similarity_matrix = normalize(similarity_matrix, norm='l1', axis=axis)
-	new_sim = np.apply_along_axis(lambda vec: alpha*vec + (1-alpha)*centrality_array, axis=axis, arr=similarity_matrix)
-	return new_sim
+
+	augmented_similarity = np.apply_along_axis(lambda vec: alpha*vec + (1-alpha)*centrality_array, axis=axis, arr=similarity_matrix)
+	return augmented_similarity
 
 
-if __name__ == '__main__':
-	centrality_array = load_centrality('./centrality_data/user_centrality.csv', 'user', 'degree')
-	sim = load_similarity('./data/ratings.csv', 'user')
-	new_sim = combine(sim.toarray(), centrality_array, axis=0)
+# if __name__ == '__main__':
+# 	users, movies, ratings = read_csv_data('./data/ratings.csv')
+# 	um_sparse = convert_to_um_matrix(users, movies, ratings)
 
-
+# 	augmented_similarity = compute_augmented_similarity(um_sparse, node_type='user', centrality_measure='eigenvector')
