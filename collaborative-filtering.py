@@ -94,6 +94,11 @@ def rmse(um_dense, user_mr_test):
     return np.sqrt(np.mean(errors))
 
 
+def compute_top_movies(um):
+    averages = um.sum(0)/(um != 0).sum(0)
+    return np.argsort(averages[0]).tolist()[::-1]
+
+
 def complete_hash_matrix(um, sim, ind, n_neighbors=6):
     sim = normalize(sim, axis=1, norm='l1')
     um_dense = np.vstack(tuple([sim[i].reshape(1,n_neighbors) * um[ind[i]] for i in range(len(ind))]))
@@ -111,11 +116,19 @@ def item_based_recommendation(um_sparse, s_movie):
     um_dense = um_sparse * s_movie
     return um_dense
 
+    
+def user_based_recommendation_nnz(um_sparse, s_user):
+    # Get nonzero indices of each movie vector
+    nnz = [np.nonzero(um_sparse.T[i])[1] for i in range(um_sparse.shape[1])]
 
-def compute_top_movies(um):
-    averages = um.sum(0)/(um != 0).sum(0)
-    return np.argsort(averages[0]).tolist()[::-1]
-
+    # Compute the weighted average user_movie_rating*u_sim_weight for nonzero um ratings
+    rows = []
+    for k in range(um_sparse.shape[1]):
+        row = um_sparse.T[k,nnz[k]] * normalize(s_user[nnz[k],:], axis=0, norm='l1')
+        rows += [row.toarray().flatten()]
+    um_dense = np.vstack(tuple(rows)).T
+    return um_dense
+    
 
 # Item based recommendation with non zero ratings
 def item_based_recommendation_nnz(um_sparse, s_movie):
@@ -129,7 +142,6 @@ def item_based_recommendation_nnz(um_sparse, s_movie):
         rows += [row.toarray().flatten()]
     um_dense = np.vstack(tuple(rows))
     return um_dense
-
 
 if __name__ == "__main__":
     filename = sys.argv[1]
