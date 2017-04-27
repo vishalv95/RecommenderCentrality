@@ -59,7 +59,7 @@ def train_model(users, movies, ratings, method, centrality_measure=None, alpha=.
 
     # Complete the sparse UM matrix via the respective collaborative filtering algorithm
 
-    # TODO: User CF is broken
+    # TODO: User CF is broken, all others seem to work as intended
     if method == 'user':
         similarity_matrix = compute_user_similarity(um_sparse)
         um_dense = user_based_recommendation_nnz(um_sparse, similarity_matrix)
@@ -70,11 +70,11 @@ def train_model(users, movies, ratings, method, centrality_measure=None, alpha=.
 
     elif method == 'user_centrality':
         similarity_matrix = compute_augmented_similarity(um_sparse, node_type='user', centrality_measure=centrality_measure, alpha=.9)
-        um_dense = user_based_recommendation(um_sparse, similarity_matrix)
+        um_dense = user_based_recommendation_nnz(um_sparse, similarity_matrix)
 
     elif method == 'movie_centrality':
         similarity_matrix = compute_augmented_similarity(um_sparse, node_type='movie', centrality_measure=centrality_measure, alpha=.9)
-        um_dense = item_based_recommendation(um_sparse, similarity_matrix)
+        um_dense = item_based_recommendation_nnz(um_sparse, similarity_matrix)
 
     return um_dense
 
@@ -99,6 +99,28 @@ def save_test_data(users_test, movies_test, ratings_test):
     test_df.index = range(len(test_df))
     test_df.to_csv('./test.csv', index=False)
     return test_df
+
+# TODO: Ensure that groups retain order
+def precision_recall_at_N(results_df, test_df, top_N=6):
+    results_df = results_df.groupby('user').apply(lambda x: x.head(top_N))
+    test_df = test_df.groupby('user').apply(lambda x: x.head(top_N))
+    overlap_df = results_df.merge(test_df, how='inner', on=['user', 'movie'])
+
+    # TODO: save lengths instead to save memory
+    precision = len(overlap_df) / len(results_df)
+    recall = len(overlap_df) / len(test_df)
+    return precision, recall
+
+
+def precision_recall_threshold(results_df, test_df, thresh=3.0):
+    results_df = results_df.groupby('user').apply(lambda x: x[x['predicted_rating'] >= thresh])
+    test_df = test_df.groupby('user').apply(lambda x: x[x['actual_rating'] >= thresh])
+    overlap_df = results_df.merge(test_df, how='inner', left_on='predicted_rating', right_on='actual_rating')
+    
+    # TODO: save lengths instead to save memory
+    precision = len(overlap_df) / len(results_df)
+    recall = len(overlap_df) / len(test_df)
+    return precision, recall
 
 
 def precision_at_N(um_dense, user_mr_test, top_N=6):
