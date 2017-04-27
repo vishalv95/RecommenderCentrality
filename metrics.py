@@ -28,6 +28,7 @@ def precision_recall_threshold(recs_df, test_df, thresh=3.0):
 def compute_ndcg(recs_df, test_df, thresh=3.0):
     def rank(df):
         df['rank'] = range(1,len(df)+1)
+        return df
 
     recs_df = recs_df[recs_df['predicted_rating'] >= thresh]
     recs_df = recs_df.groupby('user').apply(rank)
