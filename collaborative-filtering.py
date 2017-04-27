@@ -100,6 +100,7 @@ def save_test_data(users_test, movies_test, ratings_test):
     test_df.to_csv('./test.csv', index=False)
     return test_df
 
+
 # TODO: Ensure that groups retain order
 def precision_recall_at_N(results_df, test_df, top_N=6):
     results_df = results_df.groupby('user').apply(lambda x: x.head(top_N))
@@ -113,14 +114,31 @@ def precision_recall_at_N(results_df, test_df, top_N=6):
 
 
 def precision_recall_threshold(results_df, test_df, thresh=3.0):
-    results_df = results_df.groupby('user').apply(lambda x: x[x['predicted_rating'] >= thresh])
-    test_df = test_df.groupby('user').apply(lambda x: x[x['actual_rating'] >= thresh])
-    overlap_df = results_df.merge(test_df, how='inner', left_on='predicted_rating', right_on='actual_rating')
+    results_df = results_df[results_df['predicted_rating'] >= thresh]
+    test_df = test_df[test_df['actual_rating'] >= thresh]
+    overlap_df = results_df.merge(test_df, how='inner', on=['user', 'movie'])
     
     # TODO: save lengths instead to save memory
     precision = len(overlap_df) / len(results_df)
     recall = len(overlap_df) / len(test_df)
     return precision, recall
+
+
+def ndcg(results_df, test_df, thresh=3.0):
+    def rank(df):
+        df['rank'] = range(1,len(df)+1)
+
+    results_df = results_df[results_df['predicted_rating'] >= thresh]
+    results_df = results_df.groupby('user').apply(rank)
+
+    test_df = test_df[test_df['actual_rating'] >= thresh]
+    test_df = test_df.groupby('user').apply(rank)
+    overlap_df = results_df.merge(test_df, how='inner', on=['user', 'movie'], suffixes=('_predicted', '_actual'))
+
+    dcg = overlap_df.groupby('user').apply(lambda x: np.sum(x['predicted_rating'] / np.log2(x['rank_predicted'] + 1)))
+    idcg = overlap_df.groupby('user').apply(lambda x: np.sum(x['actual_rating'] / np.log2(x['rank_actual'] + 1)))
+    return np.mean(dcg / idcg)
+
 
 
 def precision_at_N(um_dense, user_mr_test, top_N=6):
@@ -141,7 +159,7 @@ def precision_at_N(um_dense, user_mr_test, top_N=6):
 
     return np.mean(precisions)
 
-# TODO: Other metrics
+
 def recall_at_N(um_dense, user_mr_test, top_N=6):
     recalls = []
 
@@ -158,17 +176,6 @@ def recall_at_N(um_dense, user_mr_test, top_N=6):
 
     return np.mean(recalls)
 
-
-def precision_threshold(um_dense, threshold):
-    pass
-
-
-def recall_threshold(um_dense, threshold):
-    pass
-
-
-def ndcg(um_dense):
-    pass
 
 # Compute the root mean squared error between a prediction and an actual test rating
 def rmse(um_dense, user_mr_test):
