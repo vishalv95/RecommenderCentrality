@@ -140,6 +140,10 @@ def ndcg(results_df, test_df, thresh=3.0):
     return np.mean(dcg / idcg)
 
 
+def rmse_df(results_df, test_df):
+    overlap_df = results_df.merge(test_df, how='inner', on=['user', 'movie'])
+    rmse = np.sqrt(np.mean((overlap_df['predicted_rating'] - overlap_df['actual_rating']) ** 2))
+    return rmse
 
 def precision_at_N(um_dense, user_mr_test, top_N=6):
     precisions = []
