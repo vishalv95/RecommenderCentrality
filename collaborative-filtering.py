@@ -4,8 +4,6 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn.preprocessing import normalize
 from sklearn.cross_validation import KFold
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.neighbors import LSHForest
 import sys
 from similarity import *
 from combine import *
@@ -48,9 +46,13 @@ def validation(users, movies, ratings):
         users_train, movies_train, ratings_train = users[train], movies[train], ratings[train]
         users_test, movies_test, ratings_test = users[test], movies[test], ratings[test]
 
-        um_dense = train_model(users_train, movies_train, ratings_train, method='user_centrality', centrality_measure='degree')
+        um_dense = train_model(users_train, movies_train, ratings_train, method='movie_centrality', centrality_measure='degree')
         results_df = serialize_results(um_dense, users_train, movies_train)
         test_df = save_test_data(users_test, movies_test, ratings_test)
+        print precision_recall_at_N(results_df, test_df)
+        print precision_recall_threshold(results_df, test_df)
+        print compute_ndcg(results_df, test_df)
+        print compute_rmse(results_df, test_df)
         assert False
 
 def train_model(users, movies, ratings, method, centrality_measure=None, alpha=.9):
@@ -124,7 +126,7 @@ def precision_recall_threshold(results_df, test_df, thresh=3.0):
     return precision, recall
 
 
-def ndcg(results_df, test_df, thresh=3.0):
+def compute_ndcg(results_df, test_df, thresh=3.0):
     def rank(df):
         df['rank'] = range(1,len(df)+1)
 
@@ -137,10 +139,11 @@ def ndcg(results_df, test_df, thresh=3.0):
 
     dcg = overlap_df.groupby('user').apply(lambda x: np.sum(x['predicted_rating'] / np.log2(x['rank_predicted'] + 1)))
     idcg = overlap_df.groupby('user').apply(lambda x: np.sum(x['actual_rating'] / np.log2(x['rank_actual'] + 1)))
-    return np.mean(dcg / idcg)
+    ndcg = np.mean(dcg / idcg)
+    return ndcg
 
 
-def rmse_df(results_df, test_df):
+def compute_rmse(results_df, test_df):
     overlap_df = results_df.merge(test_df, how='inner', on=['user', 'movie'])
     rmse = np.sqrt(np.mean((overlap_df['predicted_rating'] - overlap_df['actual_rating']) ** 2))
     return rmse
@@ -239,6 +242,7 @@ def item_based_recommendation_nnz(um_sparse, s_movie):
         rows += [row.toarray().flatten()]
     um_dense = np.vstack(tuple(rows))
     return um_dense
+
 
 if __name__ == "__main__":
     filename = sys.argv[1]
