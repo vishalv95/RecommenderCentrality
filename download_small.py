@@ -26,4 +26,4 @@ if os.path.isdir("data"):
 
 os.makedirs("data")
 
-df.to_csv("data/ratings.csv", index=False)
+df.to_csv("data/ratings_small.csv", index=False)

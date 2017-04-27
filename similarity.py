@@ -18,17 +18,6 @@ def read_csv_data(filename):
     return (users, movies, ratings)
 
 
-def read_dat_data(filename):
-    # Read users, movies, ratings as numpy arrays
-    ratings_df = pd.read_csv(filename, sep='::', header=None)
-    ratings_df.columns = ["userId", "movieId", "rating", "timestamp"]
-    users = ratings_df["userId"].as_matrix()
-    movies = ratings_df["movieId"].as_matrix()
-    ratings = ratings_df["rating"].as_matrix()
-
-    return (users, movies, ratings)
-
-
 def convert_to_um_matrix(users, movies, ratings):
     um = csr_matrix((ratings, (users, movies)))
     return um
@@ -72,5 +61,5 @@ def construct_graph(ind, sim):
     num_neighbors = ind.shape[1]
     coordinates = [(i, ind[i][j], sim[i][j]) for i in range(degree) for j in range(num_neighbors)]
     i,j,data = zip(*coordinates)
-    return csr_matrix((data, (i,j)), shape=(degree, degree)).toarray()
-    
+    return csr_matrix((data, (i,j)), shape=(degree, degree))
+
