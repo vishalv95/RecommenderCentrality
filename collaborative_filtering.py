@@ -21,7 +21,7 @@ def validation(users, movies, ratings, method, centrality_measure, alpha=0.5):
         users_test, movies_test, ratings_test = users[test], movies[test], ratings[test]
 
         um_dense = train_model(users_train, movies_train, ratings_train, method=method, centrality_measure=centrality_measure, alpha=alpha)
-        recs_df = serialize_recs(um_dense, users_train, movies_train)
+        recs_df = serialize_recs(um_dense, users_train, movies_train, users_test, movies_test)
         test_df = save_test_data(users_test, movies_test, ratings_test)
 
         precision_at_N,recall_at_N = precision_recall_at_N(recs_df, test_df, top_N=100)
@@ -58,9 +58,13 @@ def train_model(users, movies, ratings, method, centrality_measure=None, alpha=.
     return um_dense
 
 
-def serialize_recs(um_dense, users_train, movies_train):
+def serialize_recs(um_dense, users_train, movies_train, users_test, movies_test):
+    user_set = set(users_train) & set(users_test)
+    movie_set = set(movies_train) & set(movies_test)
+
     train_um_pairs = set(zip(users_train, movies_train))
-    results_umr = [(um[0], um[1], rating) for um, rating in  np.ndenumerate(um_dense) if um not in train_um_pairs]
+    results_umr = [(um[0], um[1], rating) for um, rating in  np.ndenumerate(um_dense)
+                    if um not in train_um_pairs and um[0] in user_set and um[1] in movie_set]
 
     recs_df = pd.DataFrame(results_umr, columns=['user', 'movie', 'predicted_rating'])
     recs_df = recs_df.groupby('user').apply(lambda x: x.sort_values('predicted_rating', ascending=False))
