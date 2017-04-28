@@ -21,7 +21,7 @@ def validation(users, movies, ratings, method, centrality_measure, alpha=0.5):
         users_test, movies_test, ratings_test = users[test], movies[test], ratings[test]
 
         um_dense = train_model(users_train, movies_train, ratings_train, method=method, centrality_measure=centrality_measure, alpha=alpha)
-        recs_df = serialize_results(um_dense, users_train, movies_train)
+        recs_df = serialize_recs(um_dense, users_train, movies_train)
         test_df = save_test_data(users_test, movies_test, ratings_test)
 
         precision_at_N,recall_at_N = precision_recall_at_N(recs_df, test_df, top_N=100)
@@ -29,7 +29,7 @@ def validation(users, movies, ratings, method, centrality_measure, alpha=0.5):
         ndcg = compute_ndcg(recs_df, test_df)
         rmse = compute_rmse(recs_df, test_df)
 
-        return tuple(method, centrality_measure, alpha, precision_at_N, recall_at_N, precision_threshold, recall_threshold, ndcg, rmse)
+        return (method, centrality_measure, alpha, precision_at_N, recall_at_N, precision_threshold, recall_threshold, ndcg, rmse)
 
 
 def train_model(users, movies, ratings, method, centrality_measure=None, alpha=.9):
@@ -58,7 +58,7 @@ def train_model(users, movies, ratings, method, centrality_measure=None, alpha=.
     return um_dense
 
 
-def serialize_results(um_dense, users_train, movies_train):
+def serialize_recs(um_dense, users_train, movies_train):
     train_um_pairs = set(zip(users_train, movies_train))
     results_umr = [(um[0], um[1], rating) for um, rating in  np.ndenumerate(um_dense) if um not in train_um_pairs]
 
@@ -111,9 +111,10 @@ def user_based_recommendation_nnz(um_sparse, s_user):
     rows = []
     for k in range(um_sparse.shape[1]):
         row = um_sparse.T[k,nnz[k]] * normalize(s_user[nnz[k],:], axis=0, norm='l1')
-        rows += [row.toarray().flatten()]
+        rows += [row.flatten()]
     um_dense = np.vstack(tuple(rows)).T
     return um_dense
+
 
 
 # Item based recommendation with non zero ratings
@@ -129,9 +130,10 @@ def item_based_recommendation_nnz(um_sparse, s_movie):
     um_dense = np.vstack(tuple(rows))
     return um_dense
 
+
 if __name__ == "__main__":
-    filename = sys.argv[1]
-    users, movies, ratings = read_csv_data(filename) if filename[-3:] == 'csv' else read_dat_data(filename)
-    validation(users, movies, ratings)
+    filename = './data/ratings_med.csv'
+    users, movies, ratings = read_csv_data(filename)
+    validation(users, movies, ratings, method='user', centrality_measure='', alpha=0.5)
 
     print("Done.")
