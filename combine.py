@@ -31,8 +31,8 @@ def compute_augmented_similarity(um_sparse, node_type, centrality_measure, alpha
 	return augmented_similarity
 
 
-# if __name__ == '__main__':
-# 	users, movies, ratings = read_csv_data('./data/ratings.csv')
-# 	um_sparse = convert_to_um_matrix(users, movies, ratings)
+if __name__ == '__main__':
+	users, movies, ratings = read_csv_data('./data/ratings.csv')
+	um_sparse = convert_to_um_matrix(users, movies, ratings)
 
-# 	augmented_similarity = compute_augmented_similarity(um_sparse, node_type='user', centrality_measure='eigenvector')
+	augmented_similarity = compute_augmented_similarity(um_sparse, node_type='user', centrality_measure='eigenvector')

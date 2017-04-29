@@ -63,4 +63,4 @@ if __name__ == '__main__':
     recs_df = pd.read_csv('./recs.csv')
     test_df = pd.read_csv('./test.csv')
 
-    print auc_threshold(recs_df, test_df, 3.0)
+    print precision_recall_at_N(recs_df, test_df)

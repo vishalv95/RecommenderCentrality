@@ -18,11 +18,10 @@ result_rows = []
 cols = ["method", "centrality_measure", "alpha", "precision_at_N", "recall_at_N",
                 "precision_threshold", "recall_threshold", "ndcg", "rmse", "auc_threshold"]
 
-for method in ["user_centrality", "movie_centrality"]:
-    for centrality_measure in ["particle_filtering", "degree"]:
-        for alpha in np.arange(0.5, 0.6, 0.1):
+for method in ["movie_centrality", "user_centrality"]:
+    for centrality_measure in centrality_types:
+        for alpha in np.arange(0.0, 1.1, 0.1):
             result_rows += [validation(users, movies, ratings, method, centrality_measure, alpha)]
             print(result_rows[-1])
             df = pd.DataFrame(result_rows, columns=cols)
             df.to_csv("grid_search_results.csv", index=False)
-
