@@ -49,12 +49,12 @@ def ratings_to_graph(rating_df):
 	return user_nodes, movie_nodes
 
 
-def assign_user_particles(user_nodes, particles_per_node=500):
+def assign_user_particles(user_nodes, particles_per_node=20):
 	particles = [user_nodes[p % len(user_nodes)] for p in range(particles_per_node * len(user_nodes))]
 	return particles
 
 
-def assign_movie_particles(movie_nodes, particles_per_node=500):
+def assign_movie_particles(movie_nodes, particles_per_node=30):
 	particles = [movie_nodes[p % len(movie_nodes)] for p in range(particles_per_node * len(movie_nodes))]
 	return particles
 
