@@ -31,7 +31,7 @@ def auc_threshold(recs_df, test_df, thresh=3.0):
     neg_test = test_df[test_df['actual_rating'] < thresh]
     tn = len(neg_recs.merge(neg_test, how='inner', on=['user', 'movie']))
 
-    accuracy = (tp + tn) / len(recs_df)
+    accuracy = (tp + tn) / len(test_df)
     return accuracy
 
 
@@ -57,3 +57,10 @@ def compute_rmse(recs_df, test_df):
     overlap_df = recs_df.merge(test_df, how='inner', on=['user', 'movie'])
     rmse = np.sqrt(np.mean((overlap_df['predicted_rating'] - overlap_df['actual_rating']) ** 2))
     return rmse
+
+
+if __name__ == '__main__':
+    recs_df = pd.read_csv('./recs.csv')
+    test_df = pd.read_csv('./test.csv')
+
+    print auc_threshold(recs_df, test_df, 3.0)
