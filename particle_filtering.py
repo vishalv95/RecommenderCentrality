@@ -15,7 +15,8 @@ class BipartiteGraphNode(object):
 		self.cpt[target_node] = edge_weight
 
 	def normalize_cpt(self):
-		self.cpt = {node : prob / sum(self.cpt.values()) for node, prob in self.cpt.items()}
+		rating_sum = sum(self.cpt.values())
+		self.cpt = {node : prob / rating_sum for node, prob in self.cpt.items()}
 	
 	def cumulative_distribution(self):
 		min_prob = 0
@@ -30,14 +31,17 @@ def ratings_to_graph(rating_df):
 	user_nodes = {user: BipartiteGraphNode(user, 'user') for user in users}
 	movie_nodes = {movie: BipartiteGraphNode(movie, 'movie') for movie in movies}
 
+	print 'Adding Edges'
 	for _, user, movie, rating, _ in rating_df.to_records():
 		user_nodes[user].add_edge(movie_nodes[movie], rating)
 		movie_nodes[movie].add_edge(user_nodes[user], rating)
 
+	print 'Normalizing Users'
 	for user_node in user_nodes.values(): 
 		user_node.normalize_cpt()
 		user_node.cumulative_distribution()
 
+	print 'Normalizing Movies'
 	for movie_node in movie_nodes.values(): 
 		movie_node.normalize_cpt()
 		movie_node.cumulative_distribution()
@@ -45,23 +49,23 @@ def ratings_to_graph(rating_df):
 	return user_nodes, movie_nodes
 
 
-def assign_user_particles(user_nodes, num_particles=1e6):
-	particles = [user_nodes[p % len(user_nodes)] for p in range(num_particles)]
+def assign_user_particles(user_nodes, particles_per_node=500):
+	particles = [user_nodes[p % len(user_nodes)] for p in range(particles_per_node * len(user_nodes))]
 	return particles
 
 
-def assign_movie_particles(movie_nodes, num_particles=1e6):
-	particles = [movie_nodes[p % len(movie_nodes)] for p in range(num_particles)]
+def assign_movie_particles(movie_nodes, particles_per_node=500):
+	particles = [movie_nodes[p % len(movie_nodes)] for p in range(particles_per_node * len(movie_nodes))]
 	return particles
 
 
 def update_particle(particle):
 	sample = np.random.rand()
-	new_particle = [node for node, bounds in particle.cume_pt if bounds[0] <= sample <= bounds[1]][0]
+	new_particle = [node for node, bounds in particle.cume_pt.items() if bounds[0] <= sample <= bounds[1]][0]
 	return new_particle
 
 
-def particle_filter(particles, num_iterations=50):
+def particle_filter(particles, num_iterations=10):
 	for i in range(num_iterations):
 		print i 
 		particles = [update_particle(particle) for particle in particles]
@@ -72,7 +76,7 @@ def particle_filter(particles, num_iterations=50):
 def particle_distribution(particles):
 	counts = dict()
 	for particle in particles: counts[particle] = counts.get(particle, 0) + 1
-	dist = {particle: count / len(particles) for particle, count in counts.items()}
+	dist = pd.Series({particle.node_id: (count / len(particles)) for particle, count in counts.items()})
 	return dist
 
 
@@ -80,15 +84,24 @@ if __name__ == '__main__':
 	rating_df = pd.read_csv('./data/ratings_med.csv')
 	user_nodes, movie_nodes = ratings_to_graph(rating_df)
 
+	print 'Assigning User Particles'
 	user_particles = assign_user_particles(user_nodes)
-	print particle_distribution(user_particles)
+	user_distribution = particle_distribution(user_particles)
+	print user_distribution
 
+	print 'User Particle Filtering'
 	user_particles = particle_filter(user_particles)
-	print particle_distribution(user_particles)
+	user_distribution = particle_distribution(user_particles)
+	print user_distribution
+	user_distribution.to_csv('./centrality_data/user_particle_distribution.csv')
 
-	# movie_particles = assign_movie_particles(movie_nodes)
-	# print particle_distribution(movie_particles)
+	print 'Assigning Movie Particles'
+	movie_particles = assign_movie_particles(movie_nodes)
+	movie_distribution = particle_distribution(movie_particles)
+	print movie_distribution
 
-	# movie_particles = particle_filter(movie_particles)
-	# print particle_distribution(movie_particles)
-
+	print 'Movie Particle Filtering'
+	movie_particles = particle_filter(movie_particles)
+	movie_distribution = particle_distribution(movie_particles)
+	print movie_distribution
+	movie_distribution.to_csv('./centrality_data/movie_particle_distribution.csv')
