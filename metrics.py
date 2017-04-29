@@ -8,7 +8,6 @@ def precision_recall_at_N(recs_df, test_df, top_N=6):
     test_df = test_df.groupby('user').apply(lambda x: x.head(top_N))
     overlap_df = recs_df.merge(test_df, how='inner', on=['user', 'movie'])
 
-    # TODO: save lengths instead to save memory
     precision = len(overlap_df) / len(recs_df)
     recall = len(overlap_df) / len(test_df)
     return precision, recall
@@ -19,10 +18,21 @@ def precision_recall_threshold(recs_df, test_df, thresh=3.0):
     test_df = test_df[test_df['actual_rating'] >= thresh]
     overlap_df = recs_df.merge(test_df, how='inner', on=['user', 'movie'])
 
-    # TODO: save lengths instead to save memory
     precision = len(overlap_df) / len(recs_df)
     recall = len(overlap_df) / len(test_df)
     return precision, recall
+
+def auc_threshold(recs_df, test_df, thresh=3.0):
+    pos_recs = recs_df[recs_df['predicted_rating'] >= thresh]
+    pos_test = test_df[test_df['actual_rating'] >= thresh]
+    tp = len(pos_recs.merge(pos_test, how='inner', on=['user', 'movie']))
+
+    neg_recs = recs_df[recs_df['predicted_rating'] < thresh]
+    neg_test = test_df[test_df['actual_rating'] < thresh]
+    tn = len(neg_recs.merge(neg_test, how='inner', on=['user', 'movie']))
+
+    accuracy = (tp + tn) / len(recs_df)
+    return accuracy
 
 
 def compute_ndcg(recs_df, test_df, thresh=3.0):
