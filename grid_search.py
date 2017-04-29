@@ -15,4 +15,3 @@ for method in ["user_centrality", "movie_centrality"]:
 
 			df = pd.DataFrame(result_rows, columns=cols)
 			df.to_csv("grid_search_results.csv", index=False)
-
