@@ -17,7 +17,7 @@ class BipartiteGraphNode(object):
 	def normalize_cpt(self):
 		rating_sum = sum(self.cpt.values())
 		self.cpt = {node : prob / rating_sum for node, prob in self.cpt.items()}
-	
+
 	def cumulative_distribution(self):
 		min_prob = 0
 		for node, prob in self.cpt.items():
@@ -37,12 +37,12 @@ def ratings_to_graph(rating_df):
 		movie_nodes[movie].add_edge(user_nodes[user], rating)
 
 	print 'Normalizing Users'
-	for user_node in user_nodes.values(): 
+	for user_node in user_nodes.values():
 		user_node.normalize_cpt()
 		user_node.cumulative_distribution()
 
 	print 'Normalizing Movies'
-	for movie_node in movie_nodes.values(): 
+	for movie_node in movie_nodes.values():
 		movie_node.normalize_cpt()
 		movie_node.cumulative_distribution()
 
@@ -65,19 +65,37 @@ def update_particle(particle):
 	return new_particle
 
 
-def particle_filter(particles, num_iterations=10):
+def filtering(particles, num_iterations=10):
 	for i in range(num_iterations):
-		print i 
+		# print i
 		particles = [update_particle(particle) for particle in particles]
 		particles = [update_particle(particle) for particle in particles]
 	return particles
 
 
-def particle_distribution(particles):
+def distribution(particles):
 	counts = dict()
 	for particle in particles: counts[particle] = counts.get(particle, 0) + 1
 	dist = pd.Series({particle.node_id: (count / len(particles)) for particle, count in counts.items()})
 	return dist
+
+def user_particle_filter():
+    rating_df = pd.read_csv('./data/ratings_med.csv')
+    user_nodes, movie_nodes = ratings_to_graph(rating_df)
+
+    user_particles = assign_user_particles(user_nodes)
+    user_particles = filtering(user_particles)
+    user_distribution = distribution(user_particles)
+    return user_distribution
+
+def movie_particle_filter():
+    rating_df = pd.read_csv('./data/ratings_med.csv')
+    user_nodes, movie_nodes = ratings_to_graph(rating_df)
+
+    movie_particles = assign_movie_particles(movie_nodes)
+    movie_particles = filtering(movie_particles)
+    movie_distribution = distribution(movie_particles)
+    return movie_distribution
 
 
 if __name__ == '__main__':
