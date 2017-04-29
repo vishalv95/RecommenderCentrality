@@ -84,8 +84,8 @@ def save_test_data(users_test, movies_test, ratings_test):
     return test_df
 
 
-def compute_top_movies(um):
-    averages = um.sum(0)/(um != 0).sum(0)
+def compute_top_movies(um_sparse):
+    averages = um_sparse.sum(0)/(um_sparse != 0).sum(0)
     return np.argsort(averages[0]).tolist()[::-1]
 
 
@@ -118,7 +118,6 @@ def user_based_recommendation_nnz(um_sparse, s_user):
         rows += [row.flatten()]
     um_dense = np.vstack(tuple(rows)).T
     return um_dense
-
 
 
 # Item based recommendation with non zero ratings
