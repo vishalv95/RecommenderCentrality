@@ -28,8 +28,9 @@ def validation(users, movies, ratings, method, centrality_measure, alpha=0.5):
         precision_threshold,recall_threshold = precision_recall_threshold(recs_df, test_df)
         ndcg = compute_ndcg(recs_df, test_df)
         rmse = compute_rmse(recs_df, test_df)
+        accuracy = auc_threshold(recs_df, test_df)
 
-        return (method, centrality_measure, alpha, precision_at_N, recall_at_N, precision_threshold, recall_threshold, ndcg, rmse)
+        return (method, centrality_measure, alpha, precision_at_N, recall_at_N, precision_threshold, recall_threshold, ndcg, rmse, accuracy)
 
 
 def train_model(users, movies, ratings, method, centrality_measure=None, alpha=.9):
