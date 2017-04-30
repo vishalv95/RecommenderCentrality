@@ -47,7 +47,7 @@ def compute_ndcg(recs_df, test_df, thresh=3.0):
     test_df = test_df.groupby('user').apply(rank)
     overlap_df = recs_df.merge(test_df, how='inner', on=['user', 'movie'], suffixes=('_predicted', '_actual'))
 
-    dcg = overlap_df.groupby('user').apply(lambda x: np.sum(x['predicted_rating'] / np.log2(x['rank_predicted'] + 1)))
+    dcg = overlap_df.groupby('user').apply(lambda x: np.sum(x['actual_rating'] / np.log2(x['rank_predicted'] + 1)))
     idcg = overlap_df.groupby('user').apply(lambda x: np.sum(x['actual_rating'] / np.log2(x['rank_actual'] + 1)))
     ndcg = np.mean(dcg / idcg)
     return ndcg
