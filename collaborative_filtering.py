@@ -12,7 +12,7 @@ from combine import *
 from metrics import *
 
 
-def validation(users, movies, ratings, method, centrality_measure=None, alpha=0.5):
+def validation(users, movies, ratings, method, centrality_measure=None, alpha=0.0):
     seed = 470597
     kf = KFold(len(ratings), n_folds=10, shuffle=True, random_state=seed)
     for train, test in kf:
@@ -30,22 +30,31 @@ def validation(users, movies, ratings, method, centrality_measure=None, alpha=0.
         rmse = compute_rmse(recs_df, test_df)
         accuracy = auc_threshold(recs_df, test_df)
 
+        # Return after the first fold
         return (method, centrality_measure, alpha, precision_at_N, recall_at_N, precision_threshold, recall_threshold, ndcg, rmse, accuracy)
 
 
-def train_model(users, movies, ratings, method, centrality_measure=None, alpha=.9):
+def train_model(users, movies, ratings, method, centrality_measure=None, alpha=0.0):
     # Convert the train ratings into a User-Movie matrix
     um_sparse = convert_to_um_matrix(users, movies, ratings)
 
     # Complete the sparse UM matrix via the respective collaborative filtering algorithm
-
-    # TODO: User CF is broken, all others seem to work as intended
     if method == 'user':
         similarity_matrix = compute_user_similarity(um_sparse).toarray()
         um_dense = user_based_recommendation_nnz(um_sparse, similarity_matrix)
 
     elif method == 'movie':
         similarity_matrix = compute_movie_similarity(um_sparse).toarray()
+        um_dense = item_based_recommendation_nnz(um_sparse, similarity_matrix)
+
+    elif method == 'user_lsh':
+        sim, ind = hash_user_similarity(um_sparse)
+        similarity_matrix = construct_graph(ind, sim).toarray()
+        um_dense = user_based_recommendation_nnz(um_sparse, similarity_matrix)
+
+    elif method == 'movie_lsh':
+        sim, ind = hash_movie_similarity(um_sparse)
+        similarity_matrix = construct_graph(ind, sim).toarray()
         um_dense = item_based_recommendation_nnz(um_sparse, similarity_matrix)
 
     elif method == 'user_centrality':
@@ -55,6 +64,15 @@ def train_model(users, movies, ratings, method, centrality_measure=None, alpha=.
     elif method == 'movie_centrality':
         similarity_matrix = compute_augmented_similarity(um_sparse, node_type='movie', centrality_measure=centrality_measure, alpha=alpha)
         um_dense = item_based_recommendation_nnz(um_sparse, similarity_matrix)
+
+    elif method == 'user_centrality_lsh':
+        similarity_matrix = compute_augmented_similarity_lsh(um_sparse, node_type='user', centrality_measure=centrality_measure, alpha=alpha)
+        um_dense = user_based_recommendation_nnz(um_sparse, similarity_matrix)
+
+    elif method == 'movie_centrality_lsh':
+        similarity_matrix = compute_augmented_similarity_lsh(um_sparse, node_type='movie', centrality_measure=centrality_measure, alpha=alpha)
+        um_dense = item_based_recommendation_nnz(um_sparse, similarity_matrix)
+
 
     return um_dense
 

@@ -31,6 +31,21 @@ def compute_augmented_similarity(um_sparse, node_type, centrality_measure, alpha
 	return augmented_similarity
 
 
+# Use sparse LSH similarity matrix as basis for augmentation
+def compute_augmented_similarity_lsh(um_sparse, node_type, centrality_measure, alpha=.9):
+	centrality_array = load_centrality(node_type, centrality_measure)
+	centrality_array = normalize(centrality_array, norm='l1').flatten()
+
+	axis = 1 if node_type == 'user' else 0
+	sim, ind = hash_user_similarity(um_sparse) if node_type=='user' else hash_movie_similarity(um_sparse)
+	similarity_matrix = construct_graph(ind, sim)
+	similarity_matrix = similarity_matrix.toarray()
+	similarity_matrix = normalize(similarity_matrix, norm='l1', axis=axis)
+
+	augmented_similarity = np.apply_along_axis(lambda vec: alpha*vec + (1-alpha)*centrality_array, axis=axis, arr=similarity_matrix)
+	return augmented_similarity
+
+
 if __name__ == '__main__':
 	users, movies, ratings = read_csv_data('./data/ratings.csv')
 	um_sparse = convert_to_um_matrix(users, movies, ratings)
