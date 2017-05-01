@@ -56,10 +56,10 @@ def hash_movie_similarity(um, num_neighbors=6):
 
 
 # Construct the graph from an index and similarity matrix
-def construct_graph(ind, sim):
+def construct_graph(ind, weight):
     degree = ind.shape[0]
     num_neighbors = ind.shape[1]
-    coordinates = [(i, ind[i][j], sim[i][j]) for i in range(degree) for j in range(num_neighbors)]
+    coordinates = [(i, ind[i][j], weight[i][j]) for i in range(degree) for j in range(num_neighbors)]
     i,j,data = zip(*coordinates)
-    return csr_matrix((data, (i,j)), shape=(degree, degree))
+    return csr_matrix((data+data, (i+j,j+i)), shape=(degree, degree))
 
