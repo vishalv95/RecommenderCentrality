@@ -1,5 +1,5 @@
-import pandas as pd 
-import numpy as np 
+import pandas as pd
+import numpy as np
 from sklearn.preprocessing import normalize
 from similarity import *
 
@@ -15,8 +15,8 @@ def load_similarity(ratings_file, node_type):
 	um = convert_to_um_matrix(users, movies, ratings)
 	sim = compute_user_similarity(um) if node_type == 'user' else compute_movie_similarity(um)
 	return sim
-	
-	
+
+
 # Axis should 1 for row (user case), 0 for col (item case)
 def compute_augmented_similarity(um_sparse, node_type, centrality_measure, alpha=.9):
 	centrality_array = load_centrality(node_type, centrality_measure)
@@ -27,7 +27,7 @@ def compute_augmented_similarity(um_sparse, node_type, centrality_measure, alpha
 	similarity_matrix = similarity_matrix.toarray()
 	similarity_matrix = normalize(similarity_matrix, norm='l1', axis=axis)
 
-	augmented_similarity = np.apply_along_axis(lambda vec: alpha*vec + (1-alpha)*centrality_array, axis=axis, arr=similarity_matrix)
+	augmented_similarity = np.apply_along_axis(lambda vec: (1-alpha)*vec + alpha*centrality_array, axis=axis, arr=similarity_matrix)
 	return augmented_similarity
 
 
