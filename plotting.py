@@ -30,6 +30,14 @@ def pr_curve_thresh(recs_df, test_df):
 
 
 # Plot Metrics vs. Alpha
+def metrics_vs_alpha(grid_search_results, hyperparameters, plot_metric):
+	for col, setting in hyperparameters.keys(): grid_search_results = grid_search_results[grid_search_results[column] == setting]
+	alpha, metric = grid_search_results['alpha'], grid_search_results[plot_metric]
+
+	plt.plot(alpha, metric, 'b-')
+	plt.show()
+	fig = plt.figure()
+	fig.savefig('./plots/alpha_vs_{}-{}-{}.png'.format(plot_metric, hyperparameters['method'], hyperparameters['centrality_measure']))
 
 
 # Plot ROC Curve
@@ -61,6 +69,8 @@ def plot_pf_convergence(ratings_df):
 	plt.show()
 	fig = plt.figure()
 	fig.savefig('./plots/particle_filtering_convergence.png')
+
+
 
 if __name__ == '__main__':
 	recs_df = pd.read_csv('./recs.csv')
