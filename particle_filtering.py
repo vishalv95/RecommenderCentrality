@@ -81,7 +81,7 @@ def distribution(particles):
 
 def user_particle_filter(filename):
     rating_df = pd.read_csv(filename)
-    user_nodes, movie_nodes = ratings_to_graph(rating_df)
+    user_nodes, _ = ratings_to_graph(rating_df)
 
     user_particles = assign_user_particles(user_nodes)
     user_particles = filtering(user_particles)
@@ -90,7 +90,7 @@ def user_particle_filter(filename):
 
 def movie_particle_filter(filename):
     rating_df = pd.read_csv(filename)
-    user_nodes, movie_nodes = ratings_to_graph(rating_df)
+    _, movie_nodes = ratings_to_graph(rating_df)
 
     movie_particles = assign_movie_particles(movie_nodes)
     movie_particles = filtering(movie_particles)
@@ -99,27 +99,5 @@ def movie_particle_filter(filename):
 
 
 if __name__ == '__main__':
-	rating_df = pd.read_csv('./data/ratings_med.csv')
-	user_nodes, movie_nodes = ratings_to_graph(rating_df)
-
-	print 'Assigning User Particles'
-	user_particles = assign_user_particles(user_nodes)
-	user_distribution = particle_distribution(user_particles)
-	print user_distribution
-
-	print 'User Particle Filtering'
-	user_particles = particle_filter(user_particles)
-	user_distribution = particle_distribution(user_particles)
-	print user_distribution
-	user_distribution.to_csv('./centrality_data/user_particle_distribution.csv')
-
-	print 'Assigning Movie Particles'
-	movie_particles = assign_movie_particles(movie_nodes)
-	movie_distribution = particle_distribution(movie_particles)
-	print movie_distribution
-
-	print 'Movie Particle Filtering'
-	movie_particles = particle_filter(movie_particles)
-	movie_distribution = particle_distribution(movie_particles)
-	print movie_distribution
-	movie_distribution.to_csv('./centrality_data/movie_particle_distribution.csv')
+	user_particle_filter()
+	movie_particle_filter()
