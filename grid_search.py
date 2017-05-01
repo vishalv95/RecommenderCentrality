@@ -4,13 +4,22 @@ import centrality as c
 import similarity as s
 from collaborative_filtering import *
 
-#sim,ind = s.hash_user_similarity(s.convert_to_um_matrix(*s.read_csv_data("data/ratings_med.csv")))
-#g = s.construct_graph(ind, sim)
-#c.compute_centrality(g, "user")
-#sim,ind = s.hash_movie_similarity(s.convert_to_um_matrix(*s.read_csv_data("data/ratings_med.csv")))
-#g = s.construct_graph(ind, sim)
-#c.compute_centrality(g, "movie")
-#assert False
+filename = "data/ratings_med.csv"
+
+sim,ind = s.hash_user_similarity(s.convert_to_um_matrix(*s.read_csv_data(filename)))
+dist = 1.0 - sim
+
+g_sim = s.construct_graph(ind, sim)
+g_dist = s.construct_graph(ind, dist)
+c.compute_centrality(g_sim, g_dist, "user")
+
+sim,ind = s.hash_movie_similarity(s.convert_to_um_matrix(*s.read_csv_data(filename)))
+dist = 1.0 - sim
+g_sim = s.construct_graph(ind, sim)
+g_dist = s.construct_graph(ind, dist)
+c.compute_centrality(g_sim, g_dist, "movie")
+
+# compute for all
 
 centrality_types = pd.read_csv("centrality_data/user_centrality.csv", index_col=0).columns
 users,movies,ratings = read_csv_data("data/ratings_med.csv")
