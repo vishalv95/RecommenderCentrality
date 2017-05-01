@@ -22,6 +22,22 @@ def precision_recall_threshold(recs_df, test_df, thresh=3.0):
     recall = len(overlap_df) / len(test_df)
     return precision, recall
 
+
+def fpr_tpr_threshold(recs_df, test_df, thresh=3.0):
+    pos_recs = recs_df[recs_df['predicted_rating'] >= thresh]
+    pos_test = test_df[test_df['actual_rating'] >= thresh]
+    tp = len(pos_recs.merge(pos_test, how='inner', on=['user', 'movie']))
+    tpr = tp / len(pos_test)
+
+    neg_recs = recs_df[recs_df['predicted_rating'] < thresh]
+    neg_test = test_df[test_df['actual_rating'] < thresh]
+    tn = len(neg_recs.merge(neg_test, how='inner', on=['user', 'movie']))
+    specificity = tn / len(neg_test)
+    fpr = 1.0 - specificity
+
+    return fpr, tpr
+
+
 def auc_threshold(recs_df, test_df, thresh=3.0):
     pos_recs = recs_df[recs_df['predicted_rating'] >= thresh]
     pos_test = test_df[test_df['actual_rating'] >= thresh]

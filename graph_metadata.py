@@ -23,23 +23,27 @@ for g in [S_user, S_movie, S_user_hash, S_movie_hash]:
 
 	# Unweighted Average Graph Degree
 	degrees = (g != 0).sum(axis=0)
-	row['MovieLens Average Node Degree'] = np.mean(degrees)
+	row['Unweighted Average Node Degree'] = np.mean(degrees)
 
 	# Weighted Average Graph Degree
 	weighted_degrees = g.sum(axis=0)
-	row['MovieLens Weighted Average Node Degree'] = np.mean(weighted_degrees)
+	row['Weighted MovieLens Average Node Degree'] = np.mean(weighted_degrees)
+
+	row['Average Edge Weight'] = row['Weighted Average Node Degree'] / row['Unweighted MovieLens Average Node Degree']
 
 	# Get edge cardinality by handshaking lemma
 	E = np.sum(degrees) / 2
 	# E = np.count_nonzero(g) / 2
-	row['MovieLens |E|'] = E
+	row['|E|'] = E
 
 	# Compute density with max |E|
 	graph_cardinality = g.shape[0]
 	density = (2*E) / (graph_cardinality * (graph_cardinality-1))
-	row['MovieLens Graph Density'] = density
+	row['Graph Density'] = density
 
 	rows += [row]
+
+
 
 df = pd.DataFrame(rows)
 df.index = ['S_user', 'S_movie', 'S_user_hash', 'S_movie_hash']

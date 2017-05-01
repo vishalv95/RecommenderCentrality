@@ -12,7 +12,7 @@ from combine import *
 from metrics import *
 
 
-def validation(users, movies, ratings, method, centrality_measure, alpha=0.5):
+def validation(users, movies, ratings, method, centrality_measure=None, alpha=0.5):
     seed = 470597
     kf = KFold(len(ratings), n_folds=10, shuffle=True, random_state=seed)
     for train, test in kf:

@@ -67,7 +67,6 @@ def update_particle(particle):
 
 def filtering(particles, num_iterations=10):
 	for i in range(num_iterations):
-		# print i
 		particles = [update_particle(particle) for particle in particles]
 		particles = [update_particle(particle) for particle in particles]
 	return particles
@@ -79,18 +78,33 @@ def distribution(particles):
 	dist = pd.Series({particle.node_id: (count / len(particles)) for particle, count in counts.items()})
 	return dist
 
+
+def filtering_iteration(particles):
+	particles = [update_particle(particle) for particle in particles]
+	particles = [update_particle(particle) for particle in particles]
+	return particles
+
+
+def distance(first_particles, second_particles):
+	first_distribution = distribution(first_particles)
+	second_distribution = distribution(second_particles)
+	euclidean_distance = np.sqrt((first_distribution - second_distribution).as_matrix()**2)
+	return euclidean_distance
+
+
 def user_particle_filter(filename):
-    rating_df = pd.read_csv(filename)
-    user_nodes, _ = ratings_to_graph(rating_df)
+    ratings_df = pd.read_csv(filename)
+    user_nodes, _ = ratings_to_graph(ratings_df)
 
     user_particles = assign_user_particles(user_nodes)
     user_particles = filtering(user_particles)
     user_distribution = distribution(user_particles)
     return user_distribution
 
+
 def movie_particle_filter(filename):
-    rating_df = pd.read_csv(filename)
-    _, movie_nodes = ratings_to_graph(rating_df)
+    ratings_df = pd.read_csv(filename)
+    _, movie_nodes = ratings_to_graph(ratings_df)
 
     movie_particles = assign_movie_particles(movie_nodes)
     movie_particles = filtering(movie_particles)
@@ -99,5 +113,6 @@ def movie_particle_filter(filename):
 
 
 if __name__ == '__main__':
-	user_particle_filter()
-	movie_particle_filter()
+	filename = './data/ratings_med.csv'
+	user_particle_filter(filename)
+	movie_particle_filter(filename)
