@@ -79,8 +79,8 @@ def distribution(particles):
 	dist = pd.Series({particle.node_id: (count / len(particles)) for particle, count in counts.items()})
 	return dist
 
-def user_particle_filter():
-    rating_df = pd.read_csv('./data/ratings_med.csv')
+def user_particle_filter(filename):
+    rating_df = pd.read_csv(filename)
     user_nodes, _ = ratings_to_graph(rating_df)
 
     user_particles = assign_user_particles(user_nodes)
@@ -88,8 +88,8 @@ def user_particle_filter():
     user_distribution = distribution(user_particles)
     return user_distribution
 
-def movie_particle_filter():
-    rating_df = pd.read_csv('./data/ratings_med.csv')
+def movie_particle_filter(filename):
+    rating_df = pd.read_csv(filename)
     _, movie_nodes = ratings_to_graph(rating_df)
 
     movie_particles = assign_movie_particles(movie_nodes)
