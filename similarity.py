@@ -61,5 +61,7 @@ def construct_graph(ind, weight):
     num_neighbors = ind.shape[1]
     coordinates = [(i, ind[i][j], weight[i][j]) for i in range(degree) for j in range(num_neighbors)]
     i,j,data = zip(*coordinates)
-    return csr_matrix((data+data, (i+j,j+i)), shape=(degree, degree))
+    adj = csr_matrix((data+data, (i+j,j+i)), shape=(degree, degree))
+    adj.setdiag(0)
+    return adj
 
