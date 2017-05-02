@@ -6,15 +6,15 @@ from particle_filtering import *
 from similarity import *
 
 # Plot Precision-Recall vs N
-def pr_curve_at_N(recs_df, test_df):
+def pr_curve_top_N(recs_df, test_df):
 	n_arr = range(10, 200, 10)
-	precisions, recalls = zip(*[precision_recall_at_N(recs_df, test_df, top_N=n)
+	precisions, recalls, _ = zip(*[classification_report_top_N(recs_df, test_df, top_N=n)
 		for n in n_arr])
 	# plt.plot(n_arr, recalls, 'r-', n_arr, precisions, 'b-')
 	plt.plot(recalls, precisions, 'b-')
 	plt.show()
 	fig = plt.figure()
-	fig.savefig('./plots/pr_curve_at_N.png')
+	fig.savefig('./plots/pr_curve_top_N.png')
 
 
 # Plot Precision-Recall vs Threshold

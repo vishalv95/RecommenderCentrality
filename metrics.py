@@ -2,7 +2,6 @@ from __future__ import division
 import pandas as pd
 import numpy as np
 
-# TODO: Ensure that groups retain order
 def precision_recall_at_N(recs_df, test_df, top_N=6):
     recs_df = recs_df.groupby('user').apply(lambda x: x.head(top_N))
     test_df = test_df.groupby('user').apply(lambda x: x.head(top_N))
@@ -11,6 +10,30 @@ def precision_recall_at_N(recs_df, test_df, top_N=6):
     precision = len(overlap_df) / len(recs_df)
     recall = len(overlap_df) / len(test_df)
     return precision, recall
+
+
+def confusion_matrix_top_N(recs_df, test_df, top_N=3.0):
+    pos_recs = recs_df.groupby('user').apply(lambda x: x.head(top_N))
+    pos_test = recs_df.groupby('user').apply(lambda x: x.head(top_N))
+    p = len(pos_test)
+    tp = len(pos_recs.merge(pos_test, how='inner', on=['user', 'movie']))
+    fn = p - tp
+
+    neg_recs = recs_df.groupby('user').apply(lambda x: x.tail(len(x) - top_N))
+    neg_test = recs_df.groupby('user').apply(lambda x: x.tail(len(x) - top_N))
+    n = len(neg_test)
+    tn = len(neg_recs.merge(neg_test, how='inner', on=['user', 'movie']))
+    fp = n - tn
+
+    return tp, fn, tn, fp
+
+
+def classification_report_top_N(recs_df, test_df, top_N=3.0):
+    tp, fn, tn, fp = confusion_matrix_top_N(recs_df, test_df, top_N=top_N)
+    precision = tp / (tp + fp)
+    recall = tp / (tp + fn)
+    accuracy = (tp + fn) / (tp + fn + tn + fp)
+    return precision, recall, accuracy
 
 
 def precision_recall_threshold(recs_df, test_df, thresh=3.0):
@@ -67,7 +90,7 @@ def confusion_matrix_thresh(recs_df, test_df, thresh=3.0):
     return tp, fn, tn, fp
 
 
-def classification_report_thresh(recs_df, test_df, thresh=3.0, top_N=6):
+def classification_report_thresh(recs_df, test_df, thresh=3.0):
     tp, fn, tn, fp = confusion_matrix_thresh(recs_df, test_df, thresh=thresh)
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
@@ -103,4 +126,4 @@ if __name__ == '__main__':
     recs_df = pd.read_csv('./recs.csv')
     test_df = pd.read_csv('./test.csv')
 
-    print precision_recall_at_N(recs_df, test_df)
+    print classification_report_top_N(recs_df, test_df)
