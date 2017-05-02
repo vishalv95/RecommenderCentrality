@@ -36,7 +36,7 @@ def compute_movie_similarity(um):
 
 
 def hash_user_similarity(um, num_neighbors=6):
-    lsh = LSHForest()
+    lsh = LSHForest(random_state=470957)
     lsh.fit(um)
 
     # Don't compare to self, remove first column, call 7 neighbors
@@ -46,7 +46,7 @@ def hash_user_similarity(um, num_neighbors=6):
 
 
 def hash_movie_similarity(um, num_neighbors=6):
-    lsh = LSHForest()
+    lsh = LSHForest(random_state=470957)
     lsh.fit(um.T)
 
     # Don't compare to self, remove first column, call 7 neighbors

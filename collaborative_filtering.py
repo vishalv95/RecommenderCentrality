@@ -30,7 +30,7 @@ def validation(users, movies, ratings, method, centrality_measure=None, alpha=0.
         rmse = compute_rmse(recs_df, test_df)
 
         # Return after the first fold
-        return (method, centrality_measure, alpha, precision_top_N, recall_top_N, precision_thresh, recall_thresh, ndcg, rmse, accuracy_thresh)
+        return (method, centrality_measure, alpha, precision_top_N, recall_top_N, accuracy_top_N, precision_thresh, recall_thresh, accuracy_thresh, ndcg, rmse)
 
 
 def train_model(users, movies, ratings, method, centrality_measure=None, alpha=0.0):

@@ -11,9 +11,12 @@ import os
 
 # Plot Precision-Recall vs N
 def pr_curve_top_N(recs_df, test_df):
-	n_arr = range(10, 200, 10)
+	n_arr = range(10, 500, 25)
+	#n_arr = range(10, 200, 10)
 	precisions, recalls, _ = zip(*[classification_report_top_N(recs_df, test_df, top_N=n)
 		for n in n_arr])
+
+        plt.clf()
 
 	plt.plot(recalls, precisions)
         plt.grid(True)
@@ -29,9 +32,11 @@ def pr_curve_top_N(recs_df, test_df):
 
 # Plot Precision-Recall vs Threshold
 def pr_curve_thresh(recs_df, test_df):
-	thresholds = np.arange(.5, 4.6, .5)
+	thresholds = np.arange(1.0, 4.6, .33)
 	precisions, recalls, _ = zip(*[classification_report_thresh(recs_df, test_df, thresh=t)
 		for t in thresholds])
+
+        plt.clf()
 
 	plt.plot(recalls, precisions)
         plt.grid(True)
@@ -43,6 +48,36 @@ def pr_curve_thresh(recs_df, test_df):
         plt.tight_layout()
 
         plt.savefig('./plots/pr_curve_thresh.png')
+
+def pr_curve_thresh_multiple(recs_dfs, test_df, title, settings)
+	thresholds = np.arange(1.0, 4.6, .33)
+
+        curve_arr = []
+
+        for recs_df in recs_dfs:
+        	precisions, recalls, _ = zip(*[classification_report_thresh(recs_df, test_df, thresh=t)
+		for t in thresholds])
+                curve_arr.append((precisions, recalls))
+
+        plt.clf()
+
+        plt_curves = []
+        for i,curve in enumerate(curve_arr):
+            plt_curve, = plt.plot(curve[1], curve[0], label=settings[i])
+            plt_curves.append(plt_curve)
+
+        plt.grid(True)
+        plt.title(title)
+        plt.xlabel("Recall")
+        plt.ylabel("Precision")
+
+        plt.legend(plt_curves, settings)
+
+        # The y-axis label is cutoff unless we do this
+        plt.tight_layout()
+
+        plt.savefig('./plots/pr_curve_thresh_{}.png'.format(title.replace(" ", "")))
+
 
 # Plot Metrics vs. Alpha
 def metrics_vs_alpha(grid_search_results, hyperparameters, plot_metric):
@@ -60,6 +95,8 @@ def roc_curve(recs_df, test_df):
 	thresholds = np.arange(1.01, 5.1, .33)
 	fpr, tpr = zip(*[fpr_tpr_threshold(recs_df, test_df, thresh=t)
 		for t in thresholds])
+
+        plt.clf()
 
 	plt.plot(fpr, tpr)
         plt.grid(True)
@@ -108,6 +145,6 @@ if __name__ == '__main__':
 	test_df = pd.read_csv('./test.csv')
 	ratings_df = pd.read_csv('./data/ratings_med.csv')
 #	plot_pf_convergence(recs_df, test_df)
-        #pr_curve_at_N(recs_df, test_df)
-        pr_curve_thresh(recs_df, test_df)
-        #roc_curve(recs_df, test_df)
+        #pr_curve_top_N(recs_df, test_df)
+        #pr_curve_thresh(recs_df, test_df)
+        roc_curve(recs_df, test_df)
