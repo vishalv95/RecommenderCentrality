@@ -20,7 +20,7 @@ def pr_curve_at_N(recs_df, test_df):
 # Plot Precision-Recall vs Threshold
 def pr_curve_thresh(recs_df, test_df):
 	thresholds = np.arange(.5, 5.1, .5)
-	precisions, recalls = zip(*[precision_recall_threshold(recs_df, test_df, thresh=t)
+	precisions, recalls, _ = zip(*[classification_report_thresh(recs_df, test_df, thresh=t)
 		for t in thresholds])
 	# plt.plot(thresholds, recalls, 'r-', thresholds, precisions, 'b-')
 	plt.plot(recalls, precisions, 'b-')
@@ -50,6 +50,14 @@ def roc_curve(recs_df, test_df):
 	plt.show()
 	fig = plt.figure()
 	fig.savefig('./plots/roc_thresh.png')
+
+
+# TODO: Plot Confusion Matrix: http://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html#sphx-glr-auto-examples-model-selection-plot-confusion-matrix-py
+def plot_confusion_matrix(recs_df, test_df):
+	tp, fn, tn, fp = confusion_matrix_threh(recs_df, test_df, thresh=3.0)
+	# Rows are actual, columns are predicted
+	confusion = np.array([[tp, fn], [tn, fp]])
+	return confusion
 
 
 # Plot Particle Filtering Convergence

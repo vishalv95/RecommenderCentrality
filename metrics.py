@@ -51,7 +51,7 @@ def auc_threshold(recs_df, test_df, thresh=3.0):
     return accuracy
 
 
-def confusion_matrix(recs_df, test_df, thresh=3.0):
+def confusion_matrix_thresh(recs_df, test_df, thresh=3.0):
     pos_recs = recs_df[recs_df['predicted_rating'] >= thresh]
     pos_test = test_df[test_df['actual_rating'] >= thresh]
     p = len(pos_test)
@@ -65,7 +65,15 @@ def confusion_matrix(recs_df, test_df, thresh=3.0):
     fp = n - tn
 
     return tp, fn, tn, fp
-    
+
+
+def classification_report_thresh(recs_df, test_df, thresh=3.0, top_N=6):
+    tp, fn, tn, fp = confusion_matrix_thresh(recs_df, test_df, thresh=thresh)
+    precision = tp / (tp + fp)
+    recall = tp / (tp + fn)
+    accuracy = (tp + fn) / (tp + fn + tn + fp)
+    return precision, recall, accuracy
+
 
 def compute_ndcg(recs_df, test_df, thresh=3.0):
     def rank(df):
