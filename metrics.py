@@ -13,7 +13,7 @@ def precision_recall_at_N(recs_df, test_df, top_N=6):
     return precision, recall
 
 
-def confusion_matrix_top_N(recs_df, test_df, top_N=3.0):
+def confusion_matrix_top_N(recs_df, test_df, top_N=6):
     pos_recs = recs_df.groupby('user').apply(lambda x: x.head(top_N))
     pos_test = test_df[test_df['actual_rating'] >= 4.0]
     #pos_test = recs_df.groupby('user').apply(lambda x: x.head(20))
@@ -31,7 +31,7 @@ def confusion_matrix_top_N(recs_df, test_df, top_N=3.0):
     return tp, fn, tn, fp
 
 
-def classification_report_top_N(recs_df, test_df, top_N=3.0):
+def classification_report_top_N(recs_df, test_df, top_N=6):
     tp, fn, tn, fp = confusion_matrix_top_N(recs_df, test_df, top_N=top_N)
     print(tp,fn,tn,fp)
     precision = tp / (tp + fp)
