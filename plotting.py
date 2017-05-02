@@ -54,16 +54,16 @@ def roc_curve(recs_df, test_df):
 
 # Plot Particle Filtering Convergence
 def plot_pf_convergence(ratings_df):
-	user_nodes, _ = ratings_to_graph(rating_df)
+	user_nodes, _ = ratings_to_graph(ratings_df)
 	user_particles = assign_user_particles(user_nodes)
 	iterations = range(10)
 	distances = []
 
 	for i in iterations:
-		print i
 		old_particles = user_particles
 		user_particles = filtering_iteration(user_particles)
 		distances += [distance(old_particles, user_particles)]
+		print i, distance(old_particles, user_particles)
 
 	plt.plot(iterations, distances, 'b-')
 	plt.show()
@@ -71,9 +71,10 @@ def plot_pf_convergence(ratings_df):
 	fig.savefig('./plots/particle_filtering_convergence.png')
 
 
-
 if __name__ == '__main__':
-	recs_df = pd.read_csv('./recs.csv')
-	test_df = pd.read_csv('./test.csv')
+	# recs_df = pd.read_csv('./recs.csv')
+	# test_df = pd.read_csv('./test.csv')
 	ratings_df = pd.read_csv('./data/ratings_med.csv')
-	plot_pf_convergence(recs_df, test_df)
+	# grid_search_results = pd.read_csv('./grid_search_results.csv')
+
+	plot_pf_convergence(ratings_df)

@@ -51,6 +51,22 @@ def auc_threshold(recs_df, test_df, thresh=3.0):
     return accuracy
 
 
+def confusion_matrix(recs_df, test_df, thresh=3.0):
+    pos_recs = recs_df[recs_df['predicted_rating'] >= thresh]
+    pos_test = test_df[test_df['actual_rating'] >= thresh]
+    p = len(pos_test)
+    tp = len(pos_recs.merge(pos_test, how='inner', on=['user', 'movie']))
+    fn = p - tp
+
+    neg_recs = recs_df[recs_df['predicted_rating'] < thresh]
+    neg_test = test_df[test_df['actual_rating'] < thresh]
+    n = len(neg_test)
+    tn = len(neg_recs.merge(neg_test, how='inner', on=['user', 'movie']))
+    fp = n - tn
+
+    return tp, fn, tn, fp
+    
+
 def compute_ndcg(recs_df, test_df, thresh=3.0):
     def rank(df):
         df['rank'] = range(1,len(df)+1)
