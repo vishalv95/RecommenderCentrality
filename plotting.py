@@ -1,33 +1,48 @@
 import numpy as np
 import pandas as pd
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
+#plt.ioff()
 from metrics import *
 from particle_filtering import *
 from similarity import *
+import os
 
 # Plot Precision-Recall vs N
 def pr_curve_at_N(recs_df, test_df):
 	n_arr = range(10, 200, 10)
 	precisions, recalls = zip(*[precision_recall_at_N(recs_df, test_df, top_N=n)
 		for n in n_arr])
-	# plt.plot(n_arr, recalls, 'r-', n_arr, precisions, 'b-')
-	plt.plot(recalls, precisions, 'b-')
-	plt.show()
-	fig = plt.figure()
-	fig.savefig('./plots/pr_curve_at_N.png')
+
+	plt.plot(recalls, precisions)
+        plt.grid(True)
+        plt.title("Precision vs. Recall at N")
+        plt.xlabel("Recall")
+        plt.ylabel("Precision")
+
+        # The y-axis label is cutoff unless we do this
+        plt.tight_layout()
+
+        plt.savefig('./plots/pr_curve_at_N.png')
 
 
 # Plot Precision-Recall vs Threshold
 def pr_curve_thresh(recs_df, test_df):
-	thresholds = np.arange(.5, 5.1, .5)
+	thresholds = np.arange(.5, 4.6, .5)
 	precisions, recalls = zip(*[precision_recall_threshold(recs_df, test_df, thresh=t)
 		for t in thresholds])
-	# plt.plot(thresholds, recalls, 'r-', thresholds, precisions, 'b-')
-	plt.plot(recalls, precisions, 'b-')
-	plt.show()
-	fig = plt.figure()
-	fig.savefig('./plots/pr_curve_thresh.png')
 
+	plt.plot(recalls, precisions)
+        plt.grid(True)
+        plt.title("Precision vs. Recall at threshold")
+        plt.xlabel("Recall")
+        plt.ylabel("Precision")
+
+        # The y-axis label is cutoff unless we do this
+        plt.tight_layout()
+
+        plt.savefig('./plots/pr_curve_thresh.png')
 
 # Plot Metrics vs. Alpha
 
@@ -38,10 +53,16 @@ def roc_curve(recs_df, test_df):
 	fpr, tpr = zip(*[fpr_tpr_threshold(recs_df, test_df, thresh=t)
 		for t in thresholds])
 
-	plt.plot(fpr, tpr, 'b-')
-	plt.show()
-	fig = plt.figure()
-	fig.savefig('./plots/roc_thresh.png')
+	plt.plot(fpr, tpr)
+        plt.grid(True)
+        plt.title("ROC Curve")
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
+
+        # The y-axis label is cutoff unless we do this
+        plt.tight_layout()
+
+        plt.savefig('./plots/roc_thresh.png')
 
 
 # Plot Particle Filtering Convergence
@@ -58,12 +79,18 @@ def plot_pf_convergence(ratings_df):
 		distances += [distance(old_particles, user_particles)]
 
 	plt.plot(iterations, distances, 'b-')
-	plt.show()
+	#plt.show()
 	fig = plt.figure()
 	fig.savefig('./plots/particle_filtering_convergence.png')
 
 if __name__ == '__main__':
-	recs_df = pd.read_csv('./recs.csv')
+	if not os.path.isdir("./plots"):
+            os.mkdir("plots")
+
+        recs_df = pd.read_csv('./recs.csv')
 	test_df = pd.read_csv('./test.csv')
 	ratings_df = pd.read_csv('./data/ratings_med.csv')
-	plot_pf_convergence(recs_df, test_df)
+#	plot_pf_convergence(recs_df, test_df)
+        #pr_curve_at_N(recs_df, test_df)
+        pr_curve_thresh(recs_df, test_df)
+        #roc_curve(recs_df, test_df)
