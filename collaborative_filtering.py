@@ -24,14 +24,13 @@ def validation(users, movies, ratings, method, centrality_measure=None, alpha=0.
         recs_df = serialize_recs(um_dense, users_train, movies_train, users_test, movies_test)
         test_df = save_test_data(users_test, movies_test, ratings_test)
 
-        precision_at_N,recall_at_N = precision_recall_at_N(recs_df, test_df, top_N=100)
-        precision_threshold,recall_threshold = precision_recall_threshold(recs_df, test_df)
+        precision_top_N,recall_top_N,accuracy_top_N = classification_report_top_N(recs_df, test_df)
+        precision_thresh,recall_thresh,accuracy_thresh = classification_report_thresh(recs_df, test_df)
         ndcg = compute_ndcg(recs_df, test_df)
         rmse = compute_rmse(recs_df, test_df)
-        accuracy = auc_threshold(recs_df, test_df)
 
         # Return after the first fold
-        return (method, centrality_measure, alpha, precision_at_N, recall_at_N, precision_threshold, recall_threshold, ndcg, rmse, accuracy)
+        return (method, centrality_measure, alpha, precision_top_N, recall_top_N, precision_thresh, recall_thresh, ndcg, rmse, accuracy_thresh)
 
 
 def train_model(users, movies, ratings, method, centrality_measure=None, alpha=0.0):

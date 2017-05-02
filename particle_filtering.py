@@ -88,7 +88,7 @@ def filtering_iteration(particles):
 def distance(first_particles, second_particles):
 	first_distribution = distribution(first_particles)
 	second_distribution = distribution(second_particles)
-	euclidean_distance = np.sqrt((first_distribution - second_distribution).as_matrix()**2)
+	euclidean_distance = np.sqrt(np.sum(first_distribution.add(-second_distribution, fill_value=0.0).as_matrix()**2))
 	return euclidean_distance
 
 
