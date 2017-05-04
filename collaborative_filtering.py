@@ -13,7 +13,7 @@ from metrics import *
 from popular import *
 
 
-def validation(users, movies, ratings, method, centrality_measure=None, alpha=0.0):
+def validation(users, movies, ratings, method, centrality_measure=None, alpha=0.0, tfidf=False):
     seed = 470597
     kf = KFold(len(ratings), n_folds=10, shuffle=True, random_state=seed)
     for train, test in kf:
@@ -21,7 +21,7 @@ def validation(users, movies, ratings, method, centrality_measure=None, alpha=0.
         users_train, movies_train, ratings_train = users[train], movies[train], ratings[train]
         users_test, movies_test, ratings_test = users[test], movies[test], ratings[test]
 
-        um_dense = train_model(users_train, movies_train, ratings_train, method=method, centrality_measure=centrality_measure, alpha=alpha)
+        um_dense = train_model(users_train, movies_train, ratings_train, method=method, centrality_measure=centrality_measure, alpha=alpha, tfidf=tfidf)
         recs_df = serialize_recs(um_dense, users_train, movies_train, users_test, movies_test)
         test_df = save_test_data(users_test, movies_test, ratings_test)
 
@@ -171,4 +171,4 @@ if __name__ == "__main__":
     filename = './data/ratings_med.csv'
     users, movies, ratings = read_csv_data(filename)
     # print validation(users, movies, ratings, method='user_lsh')
-    print validation(users, movies, ratings, method='user_lsh_smoothing')
+    print validation(users, movies, ratings, method='movie_lsh')
