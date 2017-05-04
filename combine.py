@@ -46,8 +46,16 @@ def compute_augmented_similarity_lsh(um_sparse, node_type, centrality_measure, a
 	return augmented_similarity
 
 
-if __name__ == '__main__':
-	users, movies, ratings = read_csv_data('./data/ratings.csv')
-	um_sparse = convert_to_um_matrix(users, movies, ratings)
+def influence_matrix(centrality_measure):
+	cu = load_centrality('user', centrality_measure)
+	ci = load_centrality('item', centrality_measure)
+	F = np.dot(ci, cu)
+	return F
 
-	augmented_similarity = compute_augmented_similarity(um_sparse, node_type='user', centrality_measure='eigenvector')
+
+if __name__ == '__main__':
+	# users, movies, ratings = read_csv_data('./data/ratings.csv')
+	# um_sparse = convert_to_um_matrix(users, movies, ratings)
+
+	# augmented_similarity = compute_augmented_similarity(um_sparse, node_type='user', centrality_measure='eigenvector')
+	print influence_matrix('eigenvector')

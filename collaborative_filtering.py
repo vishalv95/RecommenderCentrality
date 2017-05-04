@@ -10,9 +10,10 @@ import sys
 from similarity import *
 from combine import *
 from metrics import *
+from popular import *
 
 
-def validation(users, movies, ratings, method, centrality_measure=None, alpha=0.0):
+def validation(users, movies, ratings, method, centrality_measure=None, alpha=0.0, tfidf=False):
     seed = 470597
     kf = KFold(len(ratings), n_folds=10, shuffle=True, random_state=seed)
     for train, test in kf:
@@ -20,7 +21,7 @@ def validation(users, movies, ratings, method, centrality_measure=None, alpha=0.
         users_train, movies_train, ratings_train = users[train], movies[train], ratings[train]
         users_test, movies_test, ratings_test = users[test], movies[test], ratings[test]
 
-        um_dense = train_model(users_train, movies_train, ratings_train, method=method, centrality_measure=centrality_measure, alpha=alpha)
+        um_dense = train_model(users_train, movies_train, ratings_train, method=method, centrality_measure=centrality_measure, alpha=alpha, tfidf=tfidf)
         recs_df = serialize_recs(um_dense, users_train, movies_train, users_test, movies_test)
         test_df = save_test_data(users_test, movies_test, ratings_test)
 
@@ -33,9 +34,9 @@ def validation(users, movies, ratings, method, centrality_measure=None, alpha=0.
         return (method, centrality_measure, alpha, precision_top_N, recall_top_N, accuracy_top_N, precision_thresh, recall_thresh, accuracy_thresh, ndcg, rmse)
 
 
-def train_model(users, movies, ratings, method, centrality_measure=None, alpha=0.0):
+def train_model(users, movies, ratings, method, centrality_measure=None, alpha=0.0, tfidf=False):
     # Convert the train ratings into a User-Movie matrix
-    um_sparse = convert_to_um_matrix(users, movies, ratings)
+    um_sparse = convert_to_um_matrix(users, movies, ratings, tfidf=tfidf)
 
     # Complete the sparse UM matrix via the respective collaborative filtering algorithm
     if method == 'user':
@@ -56,6 +57,16 @@ def train_model(users, movies, ratings, method, centrality_measure=None, alpha=0
         similarity_matrix = construct_graph(ind, sim).toarray()
         um_dense = item_based_recommendation_nnz(um_sparse, similarity_matrix)
 
+    elif method == 'user_lsh_smoothing':
+        sim, ind = hash_user_similarity(um_sparse)
+        similarity_matrix = construct_smooth_sim(ind, sim)
+        um_dense = user_based_recommendation_nnz(um_sparse, similarity_matrix)
+
+    elif method == 'movie_lsh_smoothing':
+        sim, ind = hash_movie_similarity(um_sparse)
+        similarity_matrix = construct_smooth_sim(ind, sim)
+        um_dense = item_based_recommendation_nnz(um_sparse, similarity_matrix)
+
     elif method == 'user_centrality':
         similarity_matrix = compute_augmented_similarity(um_sparse, node_type='user', centrality_measure=centrality_measure, alpha=alpha)
         um_dense = user_based_recommendation_nnz(um_sparse, similarity_matrix)
@@ -71,6 +82,10 @@ def train_model(users, movies, ratings, method, centrality_measure=None, alpha=0
     elif method == 'movie_centrality_lsh':
         similarity_matrix = compute_augmented_similarity_lsh(um_sparse, node_type='movie', centrality_measure=centrality_measure, alpha=alpha)
         um_dense = item_based_recommendation_nnz(um_sparse, similarity_matrix)
+
+    elif method == 'popular':
+        um_dense = popular_matrix(pd.read_csv('./data/ratings_med.csv'), 10)
+
 
 
     return um_dense
@@ -155,6 +170,5 @@ def item_based_recommendation_nnz(um_sparse, s_movie):
 if __name__ == "__main__":
     filename = './data/ratings_med.csv'
     users, movies, ratings = read_csv_data(filename)
-    validation(users, movies, ratings, method='user', centrality_measure='', alpha=0.5)
-
-    print("Done.")
+    # print validation(users, movies, ratings, method='user_lsh')
+    print validation(users, movies, ratings, method='movie_lsh')

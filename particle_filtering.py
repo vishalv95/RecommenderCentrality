@@ -93,23 +93,23 @@ def distance(first_particles, second_particles):
 
 
 def user_particle_filter(filename):
-    ratings_df = pd.read_csv(filename)
-    user_nodes, _ = ratings_to_graph(ratings_df)
+	ratings_df = pd.read_csv(filename)
+	user_nodes, _ = ratings_to_graph(ratings_df)
 
-    user_particles = assign_user_particles(user_nodes)
-    user_particles = filtering(user_particles)
-    user_distribution = distribution(user_particles)
-    return user_distribution
+	user_particles = assign_user_particles(user_nodes)
+	user_particles = filtering(user_particles)
+	user_distribution = distribution(user_particles)
+	return user_distribution
 
 
 def movie_particle_filter(filename):
-    ratings_df = pd.read_csv(filename)
-    _, movie_nodes = ratings_to_graph(ratings_df)
+	ratings_df = pd.read_csv(filename)
+	_, movie_nodes = ratings_to_graph(ratings_df)
 
-    movie_particles = assign_movie_particles(movie_nodes)
-    movie_particles = filtering(movie_particles)
-    movie_distribution = distribution(movie_particles)
-    return movie_distribution
+	movie_particles = assign_movie_particles(movie_nodes)
+	movie_particles = filtering(movie_particles)
+	movie_distribution = distribution(movie_particles)
+	return movie_distribution
 
 
 if __name__ == '__main__':

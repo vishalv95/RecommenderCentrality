@@ -6,6 +6,7 @@ from sklearn.preprocessing import normalize
 from sklearn.cross_validation import KFold
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import LSHForest
+from sklearn.feature_extraction.text import TfidfTransformer
 import sys
 
 def read_csv_data(filename):
@@ -18,8 +19,11 @@ def read_csv_data(filename):
     return (users, movies, ratings)
 
 
-def convert_to_um_matrix(users, movies, ratings):
+def convert_to_um_matrix(users, movies, ratings, tfidf=False):
     um = csr_matrix((ratings, (users, movies)))
+    if tfidf:
+        transformer = TfidfTransformer()
+        um = transformer.fit_transform(um)
     return um
 
 
@@ -63,5 +67,17 @@ def construct_graph(ind, weight):
     i,j,data = zip(*coordinates)
     adj = csr_matrix((data+data, (i+j,j+i)), shape=(degree, degree))
     adj.setdiag(0)
+    return adj
+
+
+def construct_smooth_sim(ind, weight):
+    degree = ind.shape[0]
+    num_neighbors = ind.shape[1]
+    coordinates = [(i, ind[i][j], weight[i][j]) for i in range(degree) for j in range(num_neighbors)]
+    i,j,data = zip(*coordinates)
+    adj = csr_matrix((data+data, (i+j,j+i)), shape=(degree, degree)).toarray()
+    smoothing = 1.0 / (degree**2 - degree)
+    adj = adj + smoothing
+    np.fill_diagonal(adj, 0.0)
     return adj
 
