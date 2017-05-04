@@ -2,7 +2,7 @@ from __future__ import division
 import pandas as pd
 import numpy as np
 
-def precision_recall_at_N(recs_df, test_df, top_N=6):
+def precision_recall_at_N(recs_df, test_df, top_N=50):
     recs_df = recs_df.groupby('user').apply(lambda x: x.head(top_N))
     test_df = test_df[test_df['actual_rating'] >= 4.0]
     #test_df = test_df.groupby('user').apply(lambda x: x.head(20))
@@ -13,7 +13,7 @@ def precision_recall_at_N(recs_df, test_df, top_N=6):
     return precision, recall
 
 
-def confusion_matrix_top_N(recs_df, test_df, top_N=6):
+def confusion_matrix_top_N(recs_df, test_df, top_N=50):
     pos_recs = recs_df.groupby('user').apply(lambda x: x.head(top_N))
     pos_test = test_df[test_df['actual_rating'] >= 4.0]
     #pos_test = recs_df.groupby('user').apply(lambda x: x.head(20))
@@ -31,7 +31,7 @@ def confusion_matrix_top_N(recs_df, test_df, top_N=6):
     return tp, fn, tn, fp
 
 
-def classification_report_top_N(recs_df, test_df, top_N=6):
+def classification_report_top_N(recs_df, test_df, top_N=50):
     tp, fn, tn, fp = confusion_matrix_top_N(recs_df, test_df, top_N=top_N)
     print(tp,fn,tn,fp)
     precision = tp / (tp + fp)
@@ -40,7 +40,7 @@ def classification_report_top_N(recs_df, test_df, top_N=6):
     return precision, recall, accuracy
 
 
-def precision_recall_threshold(recs_df, test_df, thresh=3.0):
+def precision_recall_threshold(recs_df, test_df, thresh=3.5):
     recs_df = recs_df[recs_df['predicted_rating'] >= thresh]
     test_df = test_df[test_df['actual_rating'] >= 4.0]
     overlap_df = recs_df.merge(test_df, how='inner', on=['user', 'movie'])
@@ -50,7 +50,7 @@ def precision_recall_threshold(recs_df, test_df, thresh=3.0):
     return precision, recall
 
 
-def fpr_tpr_threshold(recs_df, test_df, thresh=3.0):
+def fpr_tpr_threshold(recs_df, test_df, thresh=3.5):
     pos_recs = recs_df[recs_df['predicted_rating'] >= thresh]
     pos_test = test_df[test_df['actual_rating'] >= 4.0]
     tp = len(pos_recs.merge(pos_test, how='inner', on=['user', 'movie']))
@@ -65,7 +65,7 @@ def fpr_tpr_threshold(recs_df, test_df, thresh=3.0):
     return fpr, tpr
 
 
-def auc_threshold(recs_df, test_df, thresh=3.0):
+def auc_threshold(recs_df, test_df, thresh=3.5):
     pos_recs = recs_df[recs_df['predicted_rating'] >= thresh]
     pos_test = test_df[test_df['actual_rating'] >= 4.0]
     tp = len(pos_recs.merge(pos_test, how='inner', on=['user', 'movie']))
@@ -78,7 +78,7 @@ def auc_threshold(recs_df, test_df, thresh=3.0):
     return accuracy
 
 
-def confusion_matrix_thresh(recs_df, test_df, thresh=3.0):
+def confusion_matrix_thresh(recs_df, test_df, thresh=3.5):
     pos_recs = recs_df[recs_df['predicted_rating'] >= thresh]
     pos_test = test_df[test_df['actual_rating'] >= 4.0]
     p = len(pos_test)
@@ -94,7 +94,7 @@ def confusion_matrix_thresh(recs_df, test_df, thresh=3.0):
     return tp, fn, tn, fp
 
 
-def classification_report_thresh(recs_df, test_df, thresh=3.0):
+def classification_report_thresh(recs_df, test_df, thresh=3.5):
     tp, fn, tn, fp = confusion_matrix_thresh(recs_df, test_df, thresh=thresh)
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
@@ -102,7 +102,7 @@ def classification_report_thresh(recs_df, test_df, thresh=3.0):
     return precision, recall, accuracy
 
 
-def compute_ndcg(recs_df, test_df, thresh=3.0):
+def compute_ndcg(recs_df, test_df, thresh=3.5):
     def rank(df):
         df['rank'] = range(1,len(df)+1)
         return df
@@ -127,7 +127,15 @@ def compute_rmse(recs_df, test_df):
 
 
 if __name__ == '__main__':
-    recs_df = pd.read_csv('./recs.csv')
+    # recs_df = pd.read_csv('./recs.csv')
     test_df = pd.read_csv('./test.csv')
 
-    print classification_report_top_N(recs_df, test_df)
+    # print classification_report_top_N(recs_df, test_df)
+
+    recs_df = pd.read_csv("recs_movie_centrality_particle_filtering_0.6.csv")
+
+    print("t,tp,fn,tn,fp")
+    print(2.5,classification_report_thresh(recs_df, test_df, thresh=2.5))
+    print(3.0,classification_report_thresh(recs_df, test_df, thresh=3.0))
+    print(3.5,classification_report_thresh(recs_df, test_df, thresh=3.5))
+    print(4.0,classification_report_thresh(recs_df, test_df, thresh=4.0))
