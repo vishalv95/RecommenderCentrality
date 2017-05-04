@@ -11,7 +11,7 @@ def get_popular_movies_df(ratings_df):
 	return df.sort_values('counts', ascending=False)
 
 
-def popular_matrix(ratings_df, top_N):
+def popular_matrix(ratings_df, top_N=1000):
 	users = set(ratings_df['userId'])
 	movies = set(ratings_df['movieId'])
 	popular_df = get_popular_movies_df(ratings_df).head(top_N)

@@ -84,9 +84,8 @@ def train_model(users, movies, ratings, method, centrality_measure=None, alpha=0
         um_dense = item_based_recommendation_nnz(um_sparse, similarity_matrix)
 
     elif method == 'popular':
-        um_dense = popular_matrix(pd.read_csv('./data/ratings_med.csv'), 10)
-
-
+        ratings_df = pd.read_csv('./data/ratings_med.csv')
+        um_dense = popular_matrix(ratings_df)
 
     return um_dense
 
@@ -115,6 +114,16 @@ def save_test_data(users_test, movies_test, ratings_test):
     test_df.index = range(len(test_df))
     test_df.to_csv('./test.csv', index=False)
     return test_df
+
+
+def save_train_data(users_train, movies_train, ratings_train):
+    train_umr = zip(users_train, movies_train, ratings_train)
+    train_df = pd.DataFrame(train_umr, columns=['user', 'movie', 'actual_rating'])
+    train_df = train_df.groupby('user').apply(lambda x: x.sort_values('actual_rating', ascending=False))
+
+    train_df.index = range(len(train_df))
+    train_df.to_csv('./train.csv', index=False)
+    return train_df
 
 
 def compute_top_movies(um_sparse):
@@ -171,4 +180,4 @@ if __name__ == "__main__":
     filename = './data/ratings_med.csv'
     users, movies, ratings = read_csv_data(filename)
     # print validation(users, movies, ratings, method='user_lsh')
-    print validation(users, movies, ratings, method='movie_lsh')
+    print validation(users, movies, ratings, method='popular')
