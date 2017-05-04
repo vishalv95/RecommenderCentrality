@@ -35,6 +35,7 @@ def classification_report_top_N(recs_df, test_df, top_N=6):
     tp, fn, tn, fp = confusion_matrix_top_N(recs_df, test_df, top_N=top_N)
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
+    f_measure = 2 * (precision * recall) / (precision + recall)
     accuracy = (tp + fn) / (tp + fn + tn + fp)
     return precision, recall, accuracy
 
@@ -97,6 +98,7 @@ def classification_report_thresh(recs_df, test_df, thresh=3.0):
     tp, fn, tn, fp = confusion_matrix_thresh(recs_df, test_df, thresh=thresh)
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
+    f_measure = 2 * (precision * recall) / (precision + recall)
     accuracy = (tp + fn) / (tp + fn + tn + fp)
     return precision, recall, accuracy
 
