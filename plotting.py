@@ -13,70 +13,66 @@ import os
 def pr_curve_top_N(recs_df, test_df):
 	n_arr = range(10, 500, 25)
 	#n_arr = range(10, 200, 10)
-	precisions, recalls, _ = zip(*[classification_report_top_N(recs_df, test_df, top_N=n)
-		for n in n_arr])
+	precisions, recalls, _ = zip(*[classification_report_top_N(recs_df, test_df, top_N=n) for n in n_arr])
 
-        plt.clf()
+	plt.clf()
 
 	plt.plot(recalls, precisions)
-        plt.grid(True)
-        plt.title("Precision vs. Recall at N")
-        plt.xlabel("Recall")
-        plt.ylabel("Precision")
+	plt.grid(True)
+	plt.title("Precision vs. Recall at N")
+	plt.xlabel("Recall")
+	plt.ylabel("Precision")
 
-        # The y-axis label is cutoff unless we do this
-        plt.tight_layout()
+	# The y-axis label is cutoff unless we do this
+	plt.tight_layout()
 
-        plt.savefig('./plots/pr_curve_at_N.png')
+	plt.savefig('./plots/pr_curve_at_N.png')
 
 
 # Plot Precision-Recall vs Threshold
 def pr_curve_thresh(recs_df, test_df):
 	thresholds = np.arange(1.0, 4.6, .33)
-	precisions, recalls, _ = zip(*[classification_report_thresh(recs_df, test_df, thresh=t)
-		for t in thresholds])
+	precisions, recalls, _ = zip(*[classification_report_thresh(recs_df, test_df, thresh=t) for t in thresholds])
 
-        plt.clf()
+	plt.clf()
 
 	plt.plot(recalls, precisions)
-        plt.grid(True)
-        plt.title("Precision vs. Recall at threshold")
-        plt.xlabel("Recall")
-        plt.ylabel("Precision")
+	plt.grid(True)
+	plt.title("Precision vs. Recall at threshold")
+	plt.xlabel("Recall")
+	plt.ylabel("Precision")
 
-        # The y-axis label is cutoff unless we do this
-        plt.tight_layout()
+	# The y-axis label is cutoff unless we do this
+	plt.tight_layout()
 
-        plt.savefig('./plots/pr_curve_thresh.png')
+	plt.savefig('./plots/pr_curve_thresh.png')
 
-def pr_curve_thresh_multiple(recs_dfs, test_df, title, settings)
+def pr_curve_thresh_multiple(recs_dfs, test_df, title, settings):
 	thresholds = np.arange(1.0, 4.6, .33)
 
-        curve_arr = []
+	curve_arr = []
+	for recs_df in recs_dfs:
+		precisions, recalls, _ = zip(*[classification_report_thresh(recs_df, test_df, thresh=t) for t in thresholds])
+		curve_arr.append((precisions, recalls))
 
-        for recs_df in recs_dfs:
-        	precisions, recalls, _ = zip(*[classification_report_thresh(recs_df, test_df, thresh=t)
-		for t in thresholds])
-                curve_arr.append((precisions, recalls))
+	plt.clf()
 
-        plt.clf()
+	plt_curves = []
+	for i,curve in enumerate(curve_arr):
+		plt_curve, = plt.plot(curve[1], curve[0], label=settings[i])
+		plt_curves.append(plt_curve)
 
-        plt_curves = []
-        for i,curve in enumerate(curve_arr):
-            plt_curve, = plt.plot(curve[1], curve[0], label=settings[i])
-            plt_curves.append(plt_curve)
+	plt.grid(True)
+	plt.title(title)
+	plt.xlabel("Recall")
+	plt.ylabel("Precision")
 
-        plt.grid(True)
-        plt.title(title)
-        plt.xlabel("Recall")
-        plt.ylabel("Precision")
+	plt.legend(plt_curves, settings)
 
-        plt.legend(plt_curves, settings)
+	# The y-axis label is cutoff unless we do this
+	plt.tight_layout()
 
-        # The y-axis label is cutoff unless we do this
-        plt.tight_layout()
-
-        plt.savefig('./plots/pr_curve_thresh_{}.png'.format(title.replace(" ", "")))
+	plt.savefig('./plots/pr_curve_thresh_{}.png'.format(title.replace(" ", "")))
 
 
 # Plot Metrics vs. Alpha
@@ -96,18 +92,18 @@ def roc_curve(recs_df, test_df):
 	fpr, tpr = zip(*[fpr_tpr_threshold(recs_df, test_df, thresh=t)
 		for t in thresholds])
 
-        plt.clf()
+	plt.clf()
 
 	plt.plot(fpr, tpr)
-        plt.grid(True)
-        plt.title("ROC Curve")
-        plt.xlabel("False Positive Rate")
-        plt.ylabel("True Positive Rate")
+	plt.grid(True)
+	plt.title("ROC Curve")
+	plt.xlabel("False Positive Rate")
+	plt.ylabel("True Positive Rate")
 
-        # The y-axis label is cutoff unless we do this
-        plt.tight_layout()
+	# The y-axis label is cutoff unless we do this
+	plt.tight_layout()
 
-        plt.savefig('./plots/roc_thresh.png')
+	plt.savefig('./plots/roc_thresh.png')
 
 
 # TODO: Plot Confusion Matrix: http://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html#sphx-glr-auto-examples-model-selection-plot-confusion-matrix-py
@@ -122,7 +118,7 @@ def plot_confusion_matrix(recs_df, test_df):
 def plot_pf_convergence(ratings_df):
 	user_nodes, _ = ratings_to_graph(ratings_df)
 	user_particles = assign_user_particles(user_nodes)
-	iterations = range(10)
+	iterations = range(1,11)
 	distances = []
 
 	for i in iterations:
@@ -131,20 +127,21 @@ def plot_pf_convergence(ratings_df):
 		distances += [distance(old_particles, user_particles)]
 		print i, distance(old_particles, user_particles)
 
-	plt.plot(iterations, distances, 'b-')
-	#plt.show()
-	fig = plt.figure()
-	fig.savefig('./plots/particle_filtering_convergence.png')
+	plt.clf()
 
+	plt.plot(iterations, distances)
+	plt.grid(True)
+	plt.title("Particle Filtering Convergence")
+	plt.xlabel("Iteration")
+	plt.ylabel("Euclidean Distance from Previous Vector")
+
+	# The y-axis label is cutoff unless we do this
+	plt.tight_layout()
+
+	plt.savefig('./plots/pf_convergence.png')
 
 if __name__ == '__main__':
-	if not os.path.isdir("./plots"):
-            os.mkdir("plots")
-
-        recs_df = pd.read_csv('./recs.csv')
-	test_df = pd.read_csv('./test.csv')
+	# recs_df = pd.read_csv('./recs.csv')
+	# test_df = pd.read_csv('./test.csv')
 	ratings_df = pd.read_csv('./data/ratings_med.csv')
-#	plot_pf_convergence(recs_df, test_df)
-        #pr_curve_top_N(recs_df, test_df)
-        #pr_curve_thresh(recs_df, test_df)
-        roc_curve(recs_df, test_df)
+	plot_pf_convergence(ratings_df)
