@@ -33,7 +33,6 @@ def confusion_matrix_top_N(recs_df, test_df, top_N=6):
 
 def classification_report_top_N(recs_df, test_df, top_N=6):
     tp, fn, tn, fp = confusion_matrix_top_N(recs_df, test_df, top_N=top_N)
-    print(tp,fn,tn,fp)
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
     accuracy = (tp + fn) / (tp + fn + tn + fp)
